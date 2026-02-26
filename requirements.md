@@ -187,7 +187,7 @@ The system uses a Multi-Agent System architecture built on AWS Bedrock, with a S
 #### Acceptance Criteria
 
 1. THE Platform SHALL use Amazon Bedrock for all LLM inference operations
-2. THE Platform SHALL use Claude 3.5 Sonnet as the primary language model
+2. THE Platform SHALL use Claude 4.6 Sonnet/Haiku as the primary language model but for development and testing we will be using cheaper claude models
 3. WHEN an agent requires LLM inference, THE Platform SHALL invoke Amazon Bedrock with appropriate prompts
 4. THE Platform SHALL handle LLM rate limits and throttling gracefully
 5. THE Platform SHALL log all LLM interactions for debugging and quality assurance

@@ -20,14 +20,25 @@ MODEL_ID = os.environ.get("IMPACT_MODEL_ID", "anthropic.claude-3-haiku-20240307-
 
 
 def call_bedrock(prompt: str) -> str:
+    """Call Bedrock. Claude uses invoke_model (Messages API), Nova uses converse() API."""
+    is_claude = MODEL_ID.startswith("anthropic.")
     for attempt in range(3):
         try:
-            resp = bedrock_runtime.invoke_model(
-                modelId=MODEL_ID,
-                body=json.dumps({"anthropic_version":"bedrock-2023-05-31","max_tokens":3000,
-                                "messages":[{"role":"user","content":prompt}],"temperature":0.7}),
-                contentType="application/json", accept="application/json")
-            return json.loads(resp["body"].read())["content"][0]["text"]
+            if is_claude:
+                body = {"anthropic_version":"bedrock-2023-05-31","max_tokens":3000,
+                        "messages":[{"role":"user","content":prompt}],"temperature":0.7}
+                resp = bedrock_runtime.invoke_model(
+                    modelId=MODEL_ID,
+                    body=json.dumps(body),
+                    contentType="application/json", accept="application/json")
+                return json.loads(resp["body"].read())["content"][0]["text"]
+            else:
+                # Nova and other models: use converse() API
+                resp = bedrock_runtime.converse(
+                    modelId=MODEL_ID,
+                    messages=[{"role":"user","content":[{"text":prompt}]}],
+                    inferenceConfig={"maxTokens":3000,"temperature":0.7})
+                return resp["output"]["message"]["content"][0]["text"]
         except ClientError as e:
             if e.response["Error"]["Code"] == "ThrottlingException" and attempt < 2:
                 time.sleep(2 ** attempt)

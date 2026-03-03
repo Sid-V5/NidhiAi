@@ -1,0 +1,451 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Premium Corporate LIGHT Mode (Crisp White / Slate / Indigo) */
+    --bg-primary: #FAFAFA;
+    --bg-secondary: #FFFFFF;
+    --bg-card: #FFFFFF;
+
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+
+    --accent: #4F46E5;
+    --accent-hover: #4338CA;
+    --blue: #2563EB;
+    --green: #059669;
+    --red: #DC2626;
+
+    --border: #CBD5E1;
+    --card-border: #E2E8F0;
+
+    --sidebar-width: 260px;
+  }
+
+  .dark {
+    /* Premium Corporate DARK Mode (Deep Slate / Vivid Indigo) */
+    --bg-primary: #09090B;
+    --bg-secondary: #141416;
+    --bg-card: #141416;
+
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+
+    --accent: #6366F1;
+    --accent-hover: #818CF8;
+    --blue: #3B82F6;
+    --green: #10B981;
+    --red: #EF4444;
+
+    --border: #27272A;
+    --card-border: #27272A;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-inter), sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .font-serif {
+    font-family: var(--font-playfair), serif;
+  }
+
+  .font-mono,
+  .telemetry-text {
+    font-family: var(--font-space-mono), monospace;
+  }
+}
+
+@layer components {
+
+  /* ============================
+     THE INSTITUTIONAL SIDEBAR
+     ============================ */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 50;
+    padding: 24px 16px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    margin-bottom: 32px;
+    text-decoration: none;
+  }
+
+  .sidebar-logo {
+    width: 36px;
+    height: 36px;
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-playfair), serif;
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 4px;
+    /* Sharp corporate look */
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+  }
+
+  .sidebar-link:hover {
+    color: var(--text-primary);
+    background: var(--bg-primary);
+  }
+
+  .sidebar-link.active {
+    background: var(--bg-primary);
+    color: var(--accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 0;
+    /* Brutalist sharp edge for active */
+  }
+
+  /* ============================
+     CORPORATE CARDS (NO BLUR)
+     ============================ */
+  .corporate-card,
+  .glass-card {
+    background: var(--bg-card);
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    /* Strict geometry */
+    padding: 24px;
+    transition: all 0.3s ease;
+  }
+
+  /* ============================
+     BUTTONS (WEIGHTED, NO GRADIENTS)
+     ============================ */
+  .btn-primary {
+    background: var(--accent);
+    color: #FFFFFF;
+    font-weight: 600;
+    padding: 12px 24px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-primary);
+    font-weight: 500;
+    padding: 12px 24px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--text-primary);
+    background: var(--bg-primary);
+  }
+
+  /* ============================
+     THEME TOGGLE
+     ============================ */
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .theme-toggle:hover {
+    color: var(--text-primary);
+    border-color: var(--text-primary);
+  }
+
+  /* ============================
+     BADGES (Minimalist)
+     ============================ */
+  .badge {
+    padding: 4px 10px;
+    border-radius: 2px;
+    font-size: 0.70rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-space-mono), monospace;
+  }
+
+  .badge-valid {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--green);
+    border: 1px solid var(--green);
+  }
+
+  .badge-expired {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--red);
+    border: 1px solid var(--red);
+  }
+
+  .badge-pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: #D97706;
+    border: 1px solid #D97706;
+  }
+
+  .dark .badge-pending {
+    color: #FBBF24;
+    border-color: #FBBF24;
+  }
+
+  .badge-processing {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--blue);
+    border: 1px solid var(--blue);
+  }
+
+  /* ============================
+     PAGE LAYOUT
+     ============================ */
+  .page-container {
+    margin-left: var(--sidebar-width);
+    padding: 40px;
+    min-height: 100vh;
+    background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: 12px 12px;
+  }
+
+  .page-header {
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+  }
+
+  .page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .page-header p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+  }
+
+  /* ============================
+     A4 DOCUMENT CANVAS (PROPOSALS)
+     ============================ */
+  .a4-canvas {
+    background: #FFFFFF;
+    /* Always white-ish to simulate paper */
+    color: #111111;
+    /* Always dark text for reading */
+    border: 1px solid #D1CDC7;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    max-width: 210mm;
+    /* A4 width */
+    min-height: 297mm;
+    /* A4 height */
+    margin: 0 auto;
+    padding: 40px 60px;
+    font-family: var(--font-playfair), serif;
+    /* High-end document font */
+    line-height: 1.6;
+  }
+
+  .dark .a4-canvas {
+    /* Slightly dimmer white in dark mode so it's not blinding, but still paper-like */
+    background: #E2E8F0;
+    border-color: #94A3B8;
+  }
+
+  /* Miscellaneous/Utility */
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  .input-field {
+    width: 100%;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+
+  .input-field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes blink {
+
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 16px;
+  background: #1E3C72;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.8s step-end infinite;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    margin-left: 0;
+    padding: 20px;
+    padding-top: 80px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+}
+
+/* Download button glow effect */
+.download-glow {
+  animation: glow-pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+@keyframes glow-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.25), 0 0 16px rgba(245, 158, 11, 0.1);
+  }
+
+  50% {
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.5), 0 0 32px rgba(245, 158, 11, 0.2), 0 0 48px rgba(245, 158, 11, 0.08);
+  }
+}
+
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}

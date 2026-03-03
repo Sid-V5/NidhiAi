@@ -1,0 +1,41 @@
+openapi: 3.0.0
+info:
+  title: Proposal Agent API
+  description: Generates professional CSR grant proposals as PDF documents
+  version: 1.0.0
+paths:
+  /generate-proposal:
+    post:
+      operationId: generateProposal
+      summary: Generate a grant proposal PDF for an NGO
+      description: Uses Claude via Bedrock to write a professional grant proposal tailored to the selected grant, then formats it as a PDF and uploads to S3. Returns a download link.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [grantData, ngoProfile]
+              properties:
+                grantData:
+                  type: string
+                  description: JSON string with grant details (corporationName, programName, focusAreas, fundingRange)
+                ngoProfile:
+                  type: string
+                  description: JSON string with NGO profile (ngoId, ngoName, sector, panCard, description)
+      responses:
+        "200":
+          description: Proposal generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  proposalId:
+                    type: string
+                  downloadUrl:
+                    type: string
+                  summary:
+                    type: string

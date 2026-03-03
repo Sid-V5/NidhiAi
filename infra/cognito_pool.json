@@ -1,0 +1,33 @@
+{
+    "PoolName": "NidhiAI-Users",
+    "AutoVerifiedAttributes": [
+        "email"
+    ],
+    "UsernameAttributes": [
+        "email"
+    ],
+    "Schema": [
+        {
+            "Name": "email",
+            "AttributeDataType": "String",
+            "Required": true,
+            "Mutable": true
+        },
+        {
+            "Name": "name",
+            "AttributeDataType": "String",
+            "Required": true,
+            "Mutable": true
+        }
+    ],
+    "Policies": {
+        "PasswordPolicy": {
+            "MinimumLength": 8,
+            "RequireUppercase": true,
+            "RequireLowercase": true,
+            "RequireNumbers": true,
+            "RequireSymbols": false
+        }
+    },
+    "MfaConfiguration": "OFF"
+}

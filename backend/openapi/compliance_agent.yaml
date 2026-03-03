@@ -1,0 +1,87 @@
+openapi: 3.0.0
+info:
+  title: Compliance Agent API
+  description: Scans NGO compliance documents (12A, 80G, CSR-1) using Amazon Textract
+  version: 1.0.0
+paths:
+  /scan-document:
+    post:
+      operationId: scanDocument
+      summary: Scan and validate an NGO compliance document
+      description: Uses Amazon Textract to extract text from uploaded certificates, identifies validity dates, and returns compliance status (valid/expired/expiring_soon).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [s3Bucket, s3Key, ngoId, documentType]
+              properties:
+                s3Bucket:
+                  type: string
+                  description: S3 bucket containing the document
+                s3Key:
+                  type: string
+                  description: S3 object key for the document
+                ngoId:
+                  type: string
+                  description: Unique identifier of the NGO
+                documentType:
+                  type: string
+                  enum: ["12A", "80G", "CSR1"]
+                  description: Type of compliance certificate
+      responses:
+        "200":
+          description: Document scanned and compliance result returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  complianceResult:
+                    type: object
+                  summary:
+                    type: string
+  /scan-documents-batch:
+    post:
+      operationId: scanDocumentsBatch
+      summary: Scan multiple compliance documents in parallel
+      description: Fires parallel Textract requests for all uploaded certificates (12A, 80G, CSR-1) simultaneously. Reduces verification time from ~15s to ~5s. Returns aggregate compliance score.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ngoId, documents]
+              properties:
+                ngoId:
+                  type: string
+                  description: Unique identifier of the NGO
+                documents:
+                  type: string
+                  description: JSON array of documents, each with s3Bucket, s3Key, documentType
+      responses:
+        "200":
+          description: All documents scanned in parallel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      type: object
+                  complianceScore:
+                    type: number
+                  parallelExecution:
+                    type: boolean
+                  totalProcessingTimeMs:
+                    type: integer
+                  summary:
+                    type: string

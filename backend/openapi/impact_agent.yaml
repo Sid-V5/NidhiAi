@@ -1,0 +1,59 @@
+openapi: 3.0.0
+info:
+  title: Impact Agent API
+  description: Generates quarterly impact reports for NGO donor relations
+  version: 1.0.0
+paths:
+  /generate-report:
+    post:
+      operationId: generateReport
+      summary: Generate a quarterly impact report
+      description: Takes NGO activity data and generates a comprehensive impact report with beneficiary metrics, fund utilization, and outcome summaries.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ngoId, ngoName]
+              properties:
+                ngoId:
+                  type: string
+                  description: Unique identifier of the NGO
+                ngoName:
+                  type: string
+                  description: Name of the NGO
+                sector:
+                  type: string
+                  description: NGO's primary sector
+                reportingPeriod:
+                  type: string
+                  description: Reporting period (e.g., Q4 2025)
+                beneficiariesServed:
+                  type: integer
+                  description: Number of beneficiaries served
+                programsCompleted:
+                  type: integer
+                  description: Number of programs completed
+                fundsUtilized:
+                  type: integer
+                  description: Total funds utilized in INR
+                geographicReach:
+                  type: string
+                  description: Geographic reach description
+      responses:
+        "200":
+          description: Impact report generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  reportId:
+                    type: string
+                  report:
+                    type: object
+                  summary:
+                    type: string

@@ -15,7 +15,7 @@ NidhiAI is a serverless, event-driven B2B SaaS platform that helps Indian NGOs a
 ### Technology Stack
 
 - **Frontend**: Next.js 14 with React Server Components
-- **Backend**: AWS Lambda (Python 3.12 runtime)
+- **Backend**: AWS Lambda (Nodejs runtime)
 - **LLM**: Amazon Bedrock with Claude models
 - **Document Processing**: Amazon Textract
 - **Vector Database**: Amazon OpenSearch Serverless

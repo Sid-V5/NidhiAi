@@ -1,0 +1,52 @@
+openapi: 3.0.0
+info:
+  title: Grant Scout Agent API
+  description: Finds matching CSR grants for NGOs using Bedrock Knowledge Base
+  version: 1.0.0
+paths:
+  /match-grants:
+    post:
+      operationId: matchGrants
+      summary: Find matching CSR grants for an NGO
+      description: Searches the CSR Opportunities Knowledge Base using semantic search to find grants matching the NGO's sector, location, and funding needs. Returns top 3-5 ranked matches.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ngoSector]
+              properties:
+                ngoSector:
+                  type: string
+                  description: Primary sector of the NGO (Education, Healthcare, etc.)
+                ngoDescription:
+                  type: string
+                  description: Description of the NGO's work and mission
+                location:
+                  type: string
+                  description: Geographic location of the NGO
+                fundingMin:
+                  type: integer
+                  description: Minimum funding amount needed in INR
+                fundingMax:
+                  type: integer
+                  description: Maximum funding amount needed in INR
+      responses:
+        "200":
+          description: Matching grants found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  grants:
+                    type: array
+                    items:
+                      type: object
+                  totalResults:
+                    type: integer
+                  summary:
+                    type: string

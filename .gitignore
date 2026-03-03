@@ -1,0 +1,39 @@
+# NidhiAI - Reference Documents (private, not for repo)
+instructions.md
+nidhi_ai_idea.md
+prototype_implementation_plan.md
+prompt.md
+frontend.md
+
+# Next.js & Node.js
+.next/
+out/
+build/
+node_modules/
+
+# Environment Variables
+.env*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Lambda installed packages (rebuilt during deployment)
+backend/lambdas/*/package/
+
+# Lambda deployment zips (rebuilt from source)
+infra/*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Gemini/Agent artifacts
+.gemini/

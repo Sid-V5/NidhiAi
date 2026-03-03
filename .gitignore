@@ -6,6 +6,9 @@ prompt.md
 frontend.md
 coreUI/UX.md
 
+# Knowledge Base training data (stored in AWS S3)
+data/
+
 # Next.js & Node.js
 .next/
 out/

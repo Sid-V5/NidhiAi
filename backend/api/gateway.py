@@ -300,10 +300,33 @@ def handle_report_generate(body: dict) -> dict:
 
 # ========== AGENT INVOCATION ==========
 def handle_invoke_agent(body: dict) -> dict:
-    """Invoke Bedrock Supervisor Agent with real agent trace."""
+    """Invoke Bedrock Supervisor Agent with real agent trace, enhanced parsing."""
     input_text = body.get("inputText", body.get("prompt", ""))
     session_id = body.get("sessionId", str(uuid.uuid4()))
     agent_id = body.get("agentId", SUPERVISOR_AGENT_ID)
+
+    # Map action group names to human-readable agent names
+    AG_MAP = {
+        "scan_documents": "Compliance",
+        "scan-documents": "Compliance",
+        "compliance": "Compliance",
+        "match_grants": "Grant Scout",
+        "match-grants": "Grant Scout",
+        "grant_scout": "Grant Scout",
+        "search_grants": "Grant Scout",
+        "generate_pdf": "Proposal",
+        "generate-pdf": "Proposal",
+        "proposal": "Proposal",
+        "generate_report": "Impact",
+        "generate-report": "Impact",
+        "impact": "Impact",
+    }
+
+    def resolve_agent(name: str) -> str:
+        if not name:
+            return "Supervisor"
+        lower = name.lower().replace(" ", "_")
+        return AG_MAP.get(lower, name.title())
 
     try:
         r = bedrock_agent_rt.invoke_agent(
@@ -318,24 +341,131 @@ def handle_invoke_agent(body: dict) -> dict:
                 chunk_bytes = event["chunk"].get("bytes", b"")
                 completion += chunk_bytes.decode("utf-8") if isinstance(chunk_bytes, bytes) else str(chunk_bytes)
             if "trace" in event:
-                trace = event["trace"]
-                # Extract meaningful trace info
-                trace_info = {}
-                if "orchestrationTrace" in trace.get("trace", {}):
-                    orch = trace["trace"]["orchestrationTrace"]
+                raw_trace = event["trace"]
+                trace_data = raw_trace.get("trace", {})
+
+                # Orchestration traces (supervisor planning, agent calls, observations)
+                if "orchestrationTrace" in trace_data:
+                    orch = trace_data["orchestrationTrace"]
+
+                    # Model invocation = supervisor thinking / rationale
                     if "modelInvocationInput" in orch:
-                        trace_info["type"] = "model_invocation"
-                        trace_info["agent"] = "Supervisor"
+                        traces.append({
+                            "type": "model_invocation",
+                            "agentName": "Supervisor",
+                            "action": "Analyzing request and determining workflow",
+                        })
+
+                    # Model output = supervisor's rationale / chain of thought
+                    if "modelInvocationOutput" in orch:
+                        output = orch["modelInvocationOutput"]
+                        rationale = ""
+                        raw_resp = output.get("rawResponse", {}).get("content", "")
+                        if raw_resp:
+                            rationale = raw_resp[:300] if isinstance(raw_resp, str) else str(raw_resp)[:300]
+                        metadata = output.get("metadata", {})
+                        usage = metadata.get("usage", {})
+                        if rationale:
+                            traces.append({
+                                "type": "planning",
+                                "agentName": "Supervisor",
+                                "action": "Planned execution workflow",
+                                "rationale": rationale,
+                                "observation": f"Tokens: {usage.get('inputTokens', '?')} in / {usage.get('outputTokens', '?')} out" if usage else None,
+                            })
+
+                    # Invocation input = calling a sub-agent / action group
                     if "invocationInput" in orch:
                         inv = orch["invocationInput"]
-                        trace_info["type"] = "agent_invocation"
-                        trace_info["actionGroup"] = inv.get("actionGroupInvocationInput", {}).get("actionGroupName", "")
+                        ag_input = inv.get("actionGroupInvocationInput", {})
+                        ag_name = ag_input.get("actionGroupName", "")
+                        api_path = ag_input.get("apiPath", "")
+                        function_name = ag_input.get("function", "")
+                        params = ag_input.get("parameters", [])
+
+                        # Knowledge base retrieval
+                        kb_input = inv.get("knowledgeBaseLookupInput", {})
+                        kb_text = kb_input.get("text", "")
+
+                        agent_name = resolve_agent(ag_name)
+                        action = f"Invoking {agent_name}"
+                        if api_path:
+                            action = f"Calling {api_path}"
+                        elif function_name:
+                            action = f"Running {function_name}"
+                        elif kb_text:
+                            agent_name = "Grant Scout"
+                            action = f"Searching knowledge base"
+
+                        param_str = ", ".join([f"{p.get('name', '?')}={p.get('value', '?')[:50]}" for p in params[:3]]) if params else None
+
+                        traces.append({
+                            "type": "agent_invocation",
+                            "agentName": agent_name,
+                            "action": action,
+                            "observation": param_str,
+                        })
+
+                    # Observation = result from sub-agent
                     if "observation" in orch:
-                        trace_info["type"] = "observation"
                         obs = orch["observation"]
-                        trace_info["result"] = str(obs)[:200]
-                if trace_info:
-                    traces.append(trace_info)
+                        ag_output = obs.get("actionGroupInvocationOutput", {})
+                        kb_output = obs.get("knowledgeBaseLookupOutput", {})
+                        final_resp = obs.get("finalResponse", {})
+                        reprompt = obs.get("repromptResponse", {})
+
+                        observation_text = ""
+                        agent_name = "Supervisor"
+
+                        if ag_output:
+                            observation_text = str(ag_output.get("text", ""))[:300]
+                            agent_name = "Supervisor"  # Will be matched by frontend
+                        elif kb_output:
+                            refs = kb_output.get("retrievedReferences", [])
+                            observation_text = f"Found {len(refs)} relevant documents"
+                            if refs:
+                                first_content = refs[0].get("content", {}).get("text", "")[:150]
+                                if first_content:
+                                    observation_text += f": {first_content}"
+                            agent_name = "Grant Scout"
+                        elif final_resp:
+                            observation_text = str(final_resp.get("text", ""))[:300]
+                        elif reprompt:
+                            observation_text = str(reprompt.get("text", ""))[:200]
+
+                        if observation_text:
+                            traces.append({
+                                "type": "observation",
+                                "agentName": agent_name,
+                                "action": "Received response",
+                                "observation": observation_text,
+                            })
+
+                # Pre-processing traces (input parsing)
+                if "preProcessingTrace" in trace_data:
+                    pre = trace_data["preProcessingTrace"]
+                    if "modelInvocationOutput" in pre:
+                        parsed = pre["modelInvocationOutput"].get("parsedResponse", {})
+                        if parsed.get("isValid") is not None:
+                            traces.append({
+                                "type": "planning",
+                                "agentName": "Supervisor",
+                                "action": "Validated user input" if parsed.get("isValid") else "Input validation issue",
+                                "rationale": parsed.get("rationale", "")[:200] if parsed.get("rationale") else None,
+                            })
+
+                # Post-processing traces
+                if "postProcessingTrace" in trace_data:
+                    post = trace_data["postProcessingTrace"]
+                    if "modelInvocationOutput" in post:
+                        parsed = post["modelInvocationOutput"].get("parsedResponse", {})
+                        if parsed.get("text"):
+                            traces.append({
+                                "type": "completion",
+                                "agentName": "Supervisor",
+                                "action": "Formatted final response",
+                                "observation": parsed["text"][:200],
+                            })
 
         return resp(200, {"completion": completion, "sessionId": session_id, "traces": traces})
     except ClientError as e:

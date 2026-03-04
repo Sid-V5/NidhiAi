@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { getSession } from "@/lib/auth";
 import { listProposals, generateProposal, searchGrants } from "@/lib/api";
-import { canAccessProposals } from "@/lib/flowState";
 
 interface Proposal {
     id: string; grant: string; corp: string; status: string;
@@ -18,7 +17,7 @@ export default function ProposalsPage() {
     const [proposals, setProposals] = useState<Proposal[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [grantsDone] = useState(() => canAccessProposals());
+    const [grantsDone] = useState(true); // Gate handled by Supervisor Agent orchestration
 
     const [activeTab, setActiveTab] = useState<"history" | "draft">("draft");
     const [isGenerating, setIsGenerating] = useState(false);

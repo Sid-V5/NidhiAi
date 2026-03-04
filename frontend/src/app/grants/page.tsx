@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getSession } from "@/lib/auth";
-import { searchGrants, generateProposal } from "@/lib/api";
-import { canAccessGrants, setFlowState } from "@/lib/flowState";
+import { searchGrants, generateProposal, getComplianceStatus } from "@/lib/api";
 import GrantCard from "@/components/GrantCard";
 
 interface Grant {
@@ -55,10 +54,24 @@ export default function GrantsPage() {
     const [traceSteps, setTraceSteps] = useState<TraceStep[]>([]);
     const [traceOpen, setTraceOpen] = useState(true);
     const [traceStartTime, setTraceStartTime] = useState(0);
-    const [complianceDone] = useState(() => canAccessGrants());
+    const [complianceDone, setComplianceDone] = useState(true);
     const streamRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => { loadGrants(); }, []);
+    useEffect(() => {
+        // Check compliance from DynamoDB
+        async function checkCompliance() {
+            const compRes = await getComplianceStatus(session.ngoId);
+            if (compRes.ok && compRes.data) {
+                const d = compRes.data as Record<string, unknown>;
+                const valid = (d.validDocuments as number) || 0;
+                setComplianceDone(valid > 0);
+            } else {
+                setComplianceDone(false);
+            }
+        }
+        checkCompliance();
+        loadGrants();
+    }, []);
 
     const loadGrants = async (query?: string) => {
         setLoading(true); setError("");
@@ -69,7 +82,6 @@ export default function GrantsPage() {
         });
         if (res.ok && res.data) {
             setGrants((res.data.grants as Grant[]) || []);
-            setFlowState({ grantsSearched: true });
         }
         else setError(res.error || "Grant search failed");
         setLoading(false);
@@ -134,7 +146,7 @@ export default function GrantsPage() {
             const data = res.data as Record<string, unknown>;
             setDownloadUrl((data.downloadUrl as string) || "");
             const content = (data.content as ProposalContent) || null;
-            setFlowState({ lastSelectedGrantId: grantId, lastSelectedGrantName: grant.programName, proposalsGenerated: 1 });
+            // Proposal generated successfully
 
             // Complete all trace steps at download + final step
             setTraceSteps(prev => prev.map(s => ({

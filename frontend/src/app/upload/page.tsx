@@ -2,7 +2,6 @@
 import { useState, useRef, useEffect } from "react";
 import { getSession, isProfileComplete } from "@/lib/auth";
 import { getUploadUrl, uploadToS3, scanDocument } from "@/lib/api";
-import { setFlowState } from "@/lib/flowState";
 import { useRouter } from "next/navigation";
 
 type DocType = "12A" | "80G" | "CSR1";
@@ -93,11 +92,7 @@ export default function UploadPage() {
         if (!allThreeDone) return;
         const passedCount = docs.filter(d => d.status === "complete" && d.result?.status === "valid").length;
         const hasFailed = docs.some(d => d.status === "complete" && d.result?.status !== "valid");
-        setFlowState({
-            complianceStatus: hasFailed ? "failed" : "passed",
-            docsVerified: passedCount,
-            complianceCompletedAt: new Date().toISOString(),
-        });
+        // Compliance status tracked in DynamoDB by backend scan Lambda
         let t = 3;
         setCountdown(t);
         const tick = setInterval(() => {

@@ -36,6 +36,7 @@ export default function ReportsPage() {
     const router = useRouter();
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(false);
+    const [grantsDone] = useState(() => canAccessProposals());
     const [error, setError] = useState("");
     const [streamedText, setStreamedText] = useState("");
     const [isStreaming, setIsStreaming] = useState(false);

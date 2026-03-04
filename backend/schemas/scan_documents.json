@@ -1,0 +1,44 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Compliance Agent - Scan Documents",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/scan-documents-batch": {
+            "post": {
+                "operationId": "scanDocumentsBatch",
+                "summary": "Scan and verify multiple NGO compliance documents (12A, 80G, CSR-1 certificates) using Amazon Textract. Validates certificate dates and stores results in DynamoDB.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "ngoId": {
+                                        "type": "string",
+                                        "description": "The NGO's unique identifier"
+                                    },
+                                    "documents": {
+                                        "type": "string",
+                                        "description": "JSON array of documents to scan. Each item has s3Bucket, s3Key, and documentType (12A, 80G, or CSR1)."
+                                    }
+                                },
+                                "required": [
+                                    "ngoId",
+                                    "documents"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Batch scan results with status per document"
+                    }
+                }
+            }
+        }
+    }
+}

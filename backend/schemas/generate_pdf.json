@@ -1,0 +1,44 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Proposal Agent - Generate Proposal PDF",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/generate-proposal": {
+            "post": {
+                "operationId": "generateProposal",
+                "summary": "Generate a formatted CSR grant proposal PDF with executive summary, problem statement, budget breakdown, and impact metrics. Uploads to S3 and returns download URL.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "grantData": {
+                                        "type": "string",
+                                        "description": "JSON string of the grant details including grantId, corporationName, programName, focusAreas, fundingRange"
+                                    },
+                                    "ngoProfile": {
+                                        "type": "string",
+                                        "description": "JSON string of the NGO profile including ngoId, ngoName, sector, description, city, state"
+                                    }
+                                },
+                                "required": [
+                                    "grantData",
+                                    "ngoProfile"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Proposal PDF download URL and content"
+                    }
+                }
+            }
+        }
+    }
+}

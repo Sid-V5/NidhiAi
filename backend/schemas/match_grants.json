@@ -1,0 +1,56 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Grant Scout Agent - Match Grants",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/match-grants": {
+            "post": {
+                "operationId": "matchGrants",
+                "summary": "Search for CSR grant opportunities matching an NGO's profile using the Bedrock Knowledge Base. Returns ranked grants by relevance score.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "ngoSector": {
+                                        "type": "string",
+                                        "description": "The NGO's sector or focus area (e.g., Education, Healthcare, Rural Development)"
+                                    },
+                                    "ngoDescription": {
+                                        "type": "string",
+                                        "description": "Brief description of the NGO and its programs"
+                                    },
+                                    "location": {
+                                        "type": "string",
+                                        "description": "Geographic location or state (e.g., Jharkhand, Maharashtra, India)"
+                                    },
+                                    "fundingMin": {
+                                        "type": "string",
+                                        "description": "Minimum funding amount in INR (default: 0)"
+                                    },
+                                    "fundingMax": {
+                                        "type": "string",
+                                        "description": "Maximum funding amount in INR (default: 5000000)"
+                                    }
+                                },
+                                "required": [
+                                    "ngoSector",
+                                    "ngoDescription"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "List of matching grants with relevance scores"
+                    }
+                }
+            }
+        }
+    }
+}

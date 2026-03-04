@@ -151,7 +151,7 @@ export default function DashboardPage() {
         }
 
         setAgentRunning(false);
-    }, [prompt, agentRunning, agentSessionId, session.ngoId, session.ngoName, session.sector]);
+    }, [prompt, agentRunning, agentSessionId, session.ngoId, session.ngoName]);
 
     const certStatus = (key: string): string => {
         if (!complianceStatus) return "unknown";

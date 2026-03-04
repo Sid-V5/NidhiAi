@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getSession } from "@/lib/auth";
 import { searchGrants, generateProposal } from "@/lib/api";
+import { canAccessGrants, setFlowState } from "@/lib/flowState";
 import GrantCard from "@/components/GrantCard";
 
 interface Grant {
@@ -54,6 +55,7 @@ export default function GrantsPage() {
     const [traceSteps, setTraceSteps] = useState<TraceStep[]>([]);
     const [traceOpen, setTraceOpen] = useState(true);
     const [traceStartTime, setTraceStartTime] = useState(0);
+    const [complianceDone] = useState(() => canAccessGrants());
     const streamRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => { loadGrants(); }, []);
@@ -65,7 +67,10 @@ export default function GrantsPage() {
             ngoDescription: query || session.ngoName || "NGO",
             location: "India",
         });
-        if (res.ok && res.data) setGrants((res.data.grants as Grant[]) || []);
+        if (res.ok && res.data) {
+            setGrants((res.data.grants as Grant[]) || []);
+            setFlowState({ grantsSearched: true });
+        }
         else setError(res.error || "Grant search failed");
         setLoading(false);
     };
@@ -129,6 +134,7 @@ export default function GrantsPage() {
             const data = res.data as Record<string, unknown>;
             setDownloadUrl((data.downloadUrl as string) || "");
             const content = (data.content as ProposalContent) || null;
+            setFlowState({ lastSelectedGrantId: grantId, lastSelectedGrantName: grant.programName, proposalsGenerated: 1 });
 
             // Complete all trace steps at download + final step
             setTraceSteps(prev => prev.map(s => ({
@@ -166,6 +172,21 @@ export default function GrantsPage() {
 
     return (
         <div>
+            {/* COMPLIANCE GATE BANNER */}
+            {!complianceDone && (
+                <div style={{
+                    padding: "16px 20px", borderRadius: 8, background: "rgba(245,158,11,0.08)",
+                    border: "1px solid rgba(245,158,11,0.3)", marginBottom: 24,
+                    display: "flex", alignItems: "center", gap: 16,
+                }}>
+                    <span style={{ fontSize: 24 }}>🔒</span>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#D97706" }}>Compliance Required</div>
+                        <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 2 }}>Verify your 12A, 80G &amp; CSR-1 documents first to unlock grant matching.</div>
+                    </div>
+                    <a href="/upload" className="btn-primary" style={{ fontSize: 12, padding: "8px 16px", textDecoration: "none", whiteSpace: "nowrap" }}>Verify Documents →</a>
+                </div>
+            )}
             <div className="page-header">
                 <h1>Grant Discovery</h1>
                 <p>AI-matched CSR funding opportunities from India&apos;s top corporations, tailored to your NGO&apos;s profile.</p>

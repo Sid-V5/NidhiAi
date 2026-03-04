@@ -2,6 +2,7 @@
 import { useState, useCallback } from "react";
 import { getSession, isProfileComplete } from "@/lib/auth";
 import { generateReport, getComplianceStatus, listProposals } from "@/lib/api";
+import { canAccessProposals } from "@/lib/flowState";
 import { useRouter } from "next/navigation";
 
 interface Report {
@@ -298,7 +299,21 @@ export default function ReportsPage() {
             </div>
 
             {/* RIGHT — A4 Document Canvas */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "32px 24px", overflowY: "auto", background: "var(--bg-primary)" }}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "32px 24px", overflowY: "auto", background: "var(--bg-primary)", flexDirection: "column" }}>
+                {!grantsDone && (
+                    <div style={{
+                        width: "100%", padding: "20px 24px", borderRadius: 8,
+                        background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)",
+                        display: "flex", alignItems: "center", gap: 16, marginBottom: 24,
+                    }}>
+                        <span style={{ fontSize: 24 }}>🔒</span>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: "#D97706" }}>Complete Grant Discovery First</div>
+                            <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 2 }}>Find grants and generate a proposal before generating impact reports.</div>
+                        </div>
+                        <a href="/grants" className="btn-primary" style={{ fontSize: 12, padding: "8px 16px", textDecoration: "none", whiteSpace: "nowrap" }}>Find Grants →</a>
+                    </div>
+                )}
 
                 {!streamedText && !isStreaming && !loading ? (
                     <div style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "15vh", opacity: 0.4 }}>

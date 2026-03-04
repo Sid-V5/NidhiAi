@@ -1,7 +1,8 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { getSession, isProfileComplete } from "@/lib/auth";
 import { getUploadUrl, uploadToS3, scanDocument } from "@/lib/api";
+import { setFlowState } from "@/lib/flowState";
 import { useRouter } from "next/navigation";
 
 type DocType = "12A" | "80G" | "CSR1";
@@ -82,7 +83,31 @@ export default function UploadPage() {
     };
 
     const uploadedTypes = docs.filter(d => d.status !== "error").map(d => d.type);
+    const completedDocs = docs.filter(d => d.status === "complete");
     const allThreeUploaded = uploadedTypes.includes("12A") && uploadedTypes.includes("80G") && uploadedTypes.includes("CSR1");
+    const allThreeDone = allThreeUploaded && completedDocs.length >= 3;
+    const [countdown, setCountdown] = useState(3);
+
+    // Auto-redirect to /grants after compliance done
+    useEffect(() => {
+        if (!allThreeDone) return;
+        const passedCount = docs.filter(d => d.status === "complete" && d.result?.status === "valid").length;
+        const hasFailed = docs.some(d => d.status === "complete" && d.result?.status !== "valid");
+        setFlowState({
+            complianceStatus: hasFailed ? "failed" : "passed",
+            docsVerified: passedCount,
+            complianceCompletedAt: new Date().toISOString(),
+        });
+        let t = 3;
+        setCountdown(t);
+        const tick = setInterval(() => {
+            t -= 1;
+            setCountdown(t);
+            if (t <= 0) { clearInterval(tick); router.push("/grants"); }
+        }, 1000);
+        return () => clearInterval(tick);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [allThreeDone]);
 
     return (
         <div>
@@ -152,14 +177,20 @@ export default function UploadPage() {
                 </div>
             )}
 
-            {allThreeUploaded && (
-                <div className="corporate-card" style={{ marginTop: 20, borderLeft: "3px solid var(--green)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <span style={{ fontSize: 24 }}>🎉</span>
-                        <div>
-                            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--green)" }}>All compliance documents uploaded!</div>
-                            <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>Head to <a href="/compliance" style={{ color: "var(--accent)" }}>Compliance</a> to review results, or <a href="/grants" style={{ color: "var(--accent)" }}>Find Grants</a> to discover matching opportunities.</div>
+            {allThreeDone && (
+                <div className="corporate-card" style={{ marginTop: 20, borderLeft: "3px solid var(--green)", background: "rgba(16,185,129,0.04)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                        <span style={{ fontSize: 32 }}>✅</span>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--green)" }}>Compliance Verified!</div>
+                            <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>All documents processed. Redirecting to Grant Discovery in <strong style={{ color: "var(--accent)" }}>{countdown}s</strong>...</div>
                         </div>
+                        <button className="btn-primary" style={{ fontSize: 12, padding: "8px 16px", whiteSpace: "nowrap" }} onClick={() => router.push("/grants")}>
+                            Go Now →
+                        </button>
+                    </div>
+                    <div style={{ marginTop: 12, height: 4, borderRadius: 2, background: "var(--border)", overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${((3 - countdown) / 3) * 100}%`, background: "var(--green)", borderRadius: 2, transition: "width 1s linear" }} />
                     </div>
                 </div>
             )}

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { getSession } from "@/lib/auth";
 import { listProposals, generateProposal, searchGrants } from "@/lib/api";
+import { canAccessProposals } from "@/lib/flowState";
 
 interface Proposal {
     id: string; grant: string; corp: string; status: string;
@@ -17,6 +18,7 @@ export default function ProposalsPage() {
     const [proposals, setProposals] = useState<Proposal[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [grantsDone] = useState(() => canAccessProposals());
 
     const [activeTab, setActiveTab] = useState<"history" | "draft">("draft");
     const [isGenerating, setIsGenerating] = useState(false);
@@ -153,7 +155,6 @@ export default function ProposalsPage() {
 
     return (
         <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", minHeight: "calc(100vh - 80px)", gap: 0 }}>
-
             {/* LEFT — Sidebar Controls */}
             <div style={{ borderRight: "1px solid var(--border)", padding: "28px 20px", display: "flex", flexDirection: "column", gap: "16px", background: "var(--bg-secondary)" }}>
                 <div>
@@ -223,7 +224,21 @@ export default function ProposalsPage() {
             </div>
 
             {/* RIGHT — A4 Document Canvas */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "32px 24px", overflowY: "auto", background: "var(--bg-primary)" }}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "32px 24px", overflowY: "auto", background: "var(--bg-primary)", flexDirection: "column" }}>
+                {!grantsDone && (
+                    <div style={{
+                        width: "100%", padding: "20px 24px", borderRadius: 8,
+                        background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)",
+                        display: "flex", alignItems: "center", gap: 16, marginBottom: 24,
+                    }}>
+                        <span style={{ fontSize: 24 }}>🔒</span>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: "#D97706" }}>Complete Grant Discovery First</div>
+                            <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 2 }}>Search for grants and select one before drafting a proposal.</div>
+                        </div>
+                        <a href="/grants" className="btn-primary" style={{ fontSize: 12, padding: "8px 16px", textDecoration: "none", whiteSpace: "nowrap" }}>Find Grants →</a>
+                    </div>
+                )}
 
                 {!streamedText && !isGenerating ? (
                     <div style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "15vh", opacity: 0.4 }}>

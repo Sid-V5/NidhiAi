@@ -1,1 +1,0 @@
-{"messageVersion": "1.0", "response": {"actionGroup": "generate_pdf", "apiPath": "/generate-proposal", "httpMethod": "POST", "httpStatusCode": 500, "responseBody": {"application/json": {"body": "{\"status\": \"error\", \"message\": \"Proposal generation failed. Please try again.\"}"}}}}

@@ -29,6 +29,11 @@ backend/lambdas/*/package/
 
 # Lambda deployment zips (rebuilt from source)
 infra/*.zip
+backend/lambdas/*/deploy.zip
+
+# Test output files (may contain AWS secrets)
+test_output*.json
+test_payload*.json
 
 # OS files
 .DS_Store

@@ -14,9 +14,24 @@ logger.setLevel(logging.INFO)
 
 bedrock_runtime = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "ap-south-1"))
 s3_client = boto3.client("s3", region_name=os.environ.get("AWS_REGION", "ap-south-1"))
+dynamodb = boto3.resource("dynamodb", region_name=os.environ.get("AWS_REGION", "ap-south-1"))
 
 REPORTS_BUCKET = os.environ.get("REPORTS_BUCKET", "nidhiai-generated-pdfs")
 MODEL_ID = os.environ.get("IMPACT_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
+NGO_PROFILES_TABLE = os.environ.get("DYNAMODB_NGO_PROFILES_TABLE", "nidhiai-ngo-profiles")
+
+
+def fetch_ngo_profile(ngo_id: str) -> dict:
+    """Fetch NGO profile from DynamoDB to fill in missing params."""
+    if not ngo_id:
+        return {}
+    try:
+        table = dynamodb.Table(NGO_PROFILES_TABLE)
+        resp = table.get_item(Key={"ngoId": ngo_id})
+        return resp.get("Item", {})
+    except Exception as e:
+        logger.warning(f"Could not fetch NGO profile for {ngo_id}: {e}")
+        return {}
 
 
 def call_bedrock(prompt: str) -> str:
@@ -154,12 +169,18 @@ def lambda_handler(event: dict, context: Any) -> dict:
 
         ngo_id = params.get("ngoId", "")
         ngo_name = params.get("ngoName", "NGO")
-        sector = params.get("sector", "Education")
         period = params.get("reportingPeriod", "Q4 2025")
-        beneficiaries = int(params.get("beneficiariesServed", 500))
-        programs = int(params.get("programsCompleted", 3))
-        funds_utilized = int(params.get("fundsUtilized", 300000))
-        geographic_reach = params.get("geographicReach", "3 districts")
+
+        # Fetch real data from DynamoDB profile to fill missing params
+        profile = fetch_ngo_profile(ngo_id) if ngo_id else {}
+        sector = params.get("sector", profile.get("sector", "Education"))
+        beneficiaries = int(params.get("beneficiariesServed", profile.get("beneficiariesServed", 500)))
+        programs = int(params.get("programsCompleted", profile.get("programsCompleted", 3)))
+        funds_utilized = int(params.get("fundsUtilized", profile.get("fundsUtilized", 300000)))
+        geographic_reach = params.get("geographicReach", profile.get("geographicReach", "3 districts"))
+        # Use profile name if Supervisor only passed ngoId
+        if ngo_name == "NGO" and profile.get("ngoName"):
+            ngo_name = profile["ngoName"]
     except Exception as e:
         return _resp(ag, ap, {"status":"error","message":str(e)}, 400)
 

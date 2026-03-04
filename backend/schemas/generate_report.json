@@ -1,0 +1,68 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Impact Agent - Generate Impact Report",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/generate-report": {
+            "post": {
+                "operationId": "generateImpactReport",
+                "summary": "Generate a quarterly CSR impact assessment report with beneficiary demographics, fund utilization breakdown, outcome highlights, and success stories. Creates PDF and uploads to S3.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "ngoId": {
+                                        "type": "string",
+                                        "description": "The NGO's unique identifier"
+                                    },
+                                    "ngoName": {
+                                        "type": "string",
+                                        "description": "Name of the NGO"
+                                    },
+                                    "sector": {
+                                        "type": "string",
+                                        "description": "NGO sector (e.g., Education, Healthcare)"
+                                    },
+                                    "reportingPeriod": {
+                                        "type": "string",
+                                        "description": "Quarter for the report (e.g., Q4 2025)"
+                                    },
+                                    "beneficiariesServed": {
+                                        "type": "string",
+                                        "description": "Number of beneficiaries served"
+                                    },
+                                    "programsCompleted": {
+                                        "type": "string",
+                                        "description": "Number of programs completed"
+                                    },
+                                    "fundsUtilized": {
+                                        "type": "string",
+                                        "description": "Total funds utilized in INR"
+                                    },
+                                    "geographicReach": {
+                                        "type": "string",
+                                        "description": "Geographic coverage (e.g., 3 districts in Jharkhand)"
+                                    }
+                                },
+                                "required": [
+                                    "ngoId",
+                                    "ngoName"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Impact report with PDF download URL"
+                    }
+                }
+            }
+        }
+    }
+}

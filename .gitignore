@@ -24,12 +24,30 @@ __pycache__/
 *.pyo
 .venv/
 
-# Lambda installed packages (rebuilt during deployment)
+# Lambda installed packages & pip deps (rebuilt during deployment)
 backend/lambdas/*/package/
+backend/lambdas/*/fontTools/
+backend/lambdas/*/fpdf/
+backend/lambdas/*/fpdf2*/
+backend/lambdas/*/share/
+backend/lambdas/*/bin/
+backend/lambdas/*/*.dist-info/
+backend/lambdas/*/defusedxml/
+backend/lambdas/*/PIL/
+backend/lambdas/*/Pillow*/
 
 # Lambda deployment zips (rebuilt from source)
 infra/*.zip
+backend/*.zip
 backend/lambdas/*/deploy.zip
+
+# Temp debug/deploy scripts
+backend/agent-role-policy.json
+backend/check_models.py
+backend/dump_policies.py
+backend/policy_dump.txt
+backend/wire_agent.py
+backend/wire_remaining.py
 
 # Test output files (may contain AWS secrets)
 test_output*.json

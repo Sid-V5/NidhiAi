@@ -304,14 +304,30 @@ def lambda_handler(event: dict, context: Any) -> dict:
     # Extract action group parameters from Bedrock Agents format
     action_group = event.get("actionGroup", "scan_documents")
     api_path = event.get("apiPath", "/scan-document")
+    function_name = event.get("function", "")  # function-style invocation
+    is_function_style = bool(function_name)
     request_body = event.get("requestBody", {})
 
+    def _build_resp(body, code=200):
+        body_str = json.dumps(body)
+        if is_function_style:
+            return {"messageVersion":"1.0","response":{"actionGroup":action_group,"function":function_name,
+                    "functionResponse":{"responseBody":{"TEXT":{"body":body_str}}}}}
+        return {"messageVersion":"1.0","response":{"actionGroup":action_group,"apiPath":api_path,
+                "httpMethod":"POST","httpStatusCode":code,"responseBody":{"application/json":{"body":body_str}}}}
+
+    def _parse_params():
+        if is_function_style:
+            params_list = event.get("parameters", [])
+            return {p["name"]: p["value"] for p in params_list}
+        body_content = request_body.get("content", {})
+        props = body_content.get("application/json", {}).get("properties", [])
+        return {p["name"]: p["value"] for p in props}
+
     # ---- BATCH MODE: Parallel scanning of all documents ----
-    if api_path == "/scan-documents-batch":
+    if api_path == "/scan-documents-batch" or function_name == "scanDocumentsBatch":
         try:
-            body_content = request_body.get("content", {})
-            props = body_content.get("application/json", {}).get("properties", [])
-            params = {p["name"]: p["value"] for p in props}
+            params = _parse_params()
             ngo_id = params.get("ngoId", "")
             documents_str = params.get("documents", "[]")
             documents = json.loads(documents_str) if isinstance(documents_str, str) else documents_str
@@ -322,37 +338,15 @@ def lambda_handler(event: dict, context: Any) -> dict:
             logger.info(f"PARALLEL BATCH SCAN: {len(documents)} documents for NGO {ngo_id}")
             batch_result = scan_documents_parallel(documents, ngo_id)
 
-            return {
-                "messageVersion": "1.0",
-                "response": {
-                    "actionGroup": action_group,
-                    "apiPath": api_path,
-                    "httpMethod": "POST",
-                    "httpStatusCode": 200,
-                    "responseBody": {
-                        "application/json": {
-                            "body": json.dumps({"status": "success", **batch_result})
-                        }
-                    },
-                },
-            }
+            return _build_resp({"status": "success", **batch_result}, 200)
         except Exception as e:
             logger.error(f"Batch scan failed: {e}")
-            return {
-                "messageVersion": "1.0",
-                "response": {
-                    "actionGroup": action_group, "apiPath": api_path,
-                    "httpMethod": "POST", "httpStatusCode": 500,
-                    "responseBody": {"application/json": {"body": json.dumps({"status": "error", "message": str(e)})}},
-                },
-            }
+            return _build_resp({"status": "error", "message": str(e)}, 500)
 
     # ---- SINGLE MODE: Original single-document scan ----
     # Parse input from Bedrock Agent invocation
     try:
-        body_content = request_body.get("content", {})
-        props = body_content.get("application/json", {}).get("properties", [])
-        params = {p["name"]: p["value"] for p in props}
+        params = _parse_params()
 
         s3_bucket = params.get("s3Bucket", "")
         s3_key = params.get("s3Key", "")
@@ -364,20 +358,7 @@ def lambda_handler(event: dict, context: Any) -> dict:
 
     except Exception as e:
         logger.error(f"Parameter parsing failed: {e}")
-        return {
-            "messageVersion": "1.0",
-            "response": {
-                "actionGroup": action_group,
-                "apiPath": api_path,
-                "httpMethod": "POST",
-                "httpStatusCode": 400,
-                "responseBody": {
-                    "application/json": {
-                        "body": json.dumps({"status": "error", "message": str(e)})
-                    }
-                },
-            },
-        }
+        return _build_resp({"status": "error", "message": str(e)}, 400)
 
     try:
         # Step 1: Call Textract
@@ -428,60 +409,11 @@ def lambda_handler(event: dict, context: Any) -> dict:
         if low_confidence:
             compliance_summary += " Warning: Low OCR confidence - manual review recommended."
 
-        return {
-            "messageVersion": "1.0",
-            "response": {
-                "actionGroup": action_group,
-                "apiPath": api_path,
-                "httpMethod": "POST",
-                "httpStatusCode": 200,
-                "responseBody": {
-                    "application/json": {
-                        "body": json.dumps({
-                            "status": "success",
-                            "complianceResult": result,
-                            "summary": compliance_summary,
-                        })
-                    }
-                },
-            },
-        }
+        return _build_resp({"status": "success", "complianceResult": result, "summary": compliance_summary}, 200)
 
     except ClientError as e:
         logger.error(f"AWS service error: {e}")
-        return {
-            "messageVersion": "1.0",
-            "response": {
-                "actionGroup": action_group,
-                "apiPath": api_path,
-                "httpMethod": "POST",
-                "httpStatusCode": 500,
-                "responseBody": {
-                    "application/json": {
-                        "body": json.dumps({
-                            "status": "error",
-                            "message": "We couldn't read your document. Please upload a higher quality scan.",
-                        })
-                    }
-                },
-            },
-        }
+        return _build_resp({"status": "error", "message": "We couldn't read your document. Please upload a higher quality scan."}, 500)
     except Exception as e:
         logger.exception(f"Unexpected error: {e}")
-        return {
-            "messageVersion": "1.0",
-            "response": {
-                "actionGroup": action_group,
-                "apiPath": api_path,
-                "httpMethod": "POST",
-                "httpStatusCode": 500,
-                "responseBody": {
-                    "application/json": {
-                        "body": json.dumps({
-                            "status": "error",
-                            "message": "An unexpected error occurred. Please try again.",
-                        })
-                    }
-                },
-            },
-        }
+        return _build_resp({"status": "error", "message": "An unexpected error occurred. Please try again."}, 500)

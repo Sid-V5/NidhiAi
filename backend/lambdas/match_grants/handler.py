@@ -277,12 +277,20 @@ def lambda_handler(event: dict, context: Any) -> dict:
 
     action_group = event.get("actionGroup", "match_grants")
     api_path = event.get("apiPath", "/match-grants")
+    function_name = event.get("function", "")  # function-style invocation
+    is_function_style = bool(function_name)
 
     try:
-        request_body = event.get("requestBody", {})
-        body_content = request_body.get("content", {})
-        props = body_content.get("application/json", {}).get("properties", [])
-        params = {p["name"]: p["value"] for p in props}
+        if is_function_style:
+            # Function-style: parameters is a list of {name, type, value}
+            params_list = event.get("parameters", [])
+            params = {p["name"]: p["value"] for p in params_list}
+        else:
+            # OpenAPI-style: requestBody.content.application/json.properties
+            request_body = event.get("requestBody", {})
+            body_content = request_body.get("content", {})
+            props = body_content.get("application/json", {}).get("properties", [])
+            params = {p["name"]: p["value"] for p in props}
 
         ngo_sector = params.get("ngoSector", "")
         ngo_description = params.get("ngoDescription", "")
@@ -292,7 +300,7 @@ def lambda_handler(event: dict, context: Any) -> dict:
 
     except Exception as e:
         logger.error(f"Parameter parsing error: {e}")
-        return _error_response(action_group, api_path, str(e), 400)
+        return _build_response(action_group, api_path, function_name, is_function_style, {"status": "error", "message": str(e)}, 400)
 
     try:
         grants = []
@@ -350,32 +358,35 @@ def lambda_handler(event: dict, context: Any) -> dict:
         else:
             summary = "No grants found matching your criteria. Try broadening your sector description."
 
+        result = {
+            "status": "success",
+            "grants": grants,
+            "totalResults": len(grants),
+            "summary": summary,
+        }
+        return _build_response(action_group, api_path, function_name, is_function_style, result, 200)
+
+    except Exception as e:
+        logger.exception(f"Unexpected error: {e}")
+        return _build_response(action_group, api_path, function_name, is_function_style, {"status": "error", "message": "Grant search failed."}, 500)
+
+
+def _build_response(action_group: str, api_path: str, function_name: str, is_function_style: bool, body: dict, status_code: int) -> dict:
+    """Build response in correct format: function-style or OpenAPI-style."""
+    body_str = json.dumps(body)
+    if is_function_style:
         return {
             "messageVersion": "1.0",
             "response": {
                 "actionGroup": action_group,
-                "apiPath": api_path,
-                "httpMethod": "POST",
-                "httpStatusCode": 200,
-                "responseBody": {
-                    "application/json": {
-                        "body": json.dumps({
-                            "status": "success",
-                            "grants": grants,
-                            "totalResults": len(grants),
-                            "summary": summary,
-                        })
+                "function": function_name,
+                "functionResponse": {
+                    "responseBody": {
+                        "TEXT": {"body": body_str}
                     }
                 },
             },
         }
-
-    except Exception as e:
-        logger.exception(f"Unexpected error: {e}")
-        return _error_response(action_group, api_path, "Grant search failed. Please try again.", 500)
-
-
-def _error_response(action_group: str, api_path: str, message: str, status_code: int) -> dict:
     return {
         "messageVersion": "1.0",
         "response": {
@@ -384,9 +395,7 @@ def _error_response(action_group: str, api_path: str, message: str, status_code:
             "httpMethod": "POST",
             "httpStatusCode": status_code,
             "responseBody": {
-                "application/json": {
-                    "body": json.dumps({"status": "error", "message": message})
-                }
+                "application/json": {"body": body_str}
             },
         },
     }

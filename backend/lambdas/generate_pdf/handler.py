@@ -147,14 +147,19 @@ def generate_pdf_bytes(content: dict, grant: dict, ngo: dict) -> bytes:
 def lambda_handler(event: dict, context: Any) -> dict:
     logger.info(f"Event: {json.dumps(event)}")
     ag = event.get("actionGroup","generate_pdf"); ap = event.get("apiPath","/generate-proposal")
+    fn = event.get("function", ""); is_fn = bool(fn)
 
     try:
-        props = event.get("requestBody",{}).get("content",{}).get("application/json",{}).get("properties",[])
-        params = {p["name"]: p["value"] for p in props}
+        if is_fn:
+            params_list = event.get("parameters", [])
+            params = {p["name"]: p["value"] for p in params_list}
+        else:
+            props = event.get("requestBody",{}).get("content",{}).get("application/json",{}).get("properties",[])
+            params = {p["name"]: p["value"] for p in props}
         grant = json.loads(params.get("grantData","{}")) if isinstance(params.get("grantData"), str) else params.get("grantData",{})
         ngo = json.loads(params.get("ngoProfile","{}")) if isinstance(params.get("ngoProfile"), str) else params.get("ngoProfile",{})
     except Exception as e:
-        return _resp(ag, ap, {"status":"error","message":str(e)}, 400)
+        return _resp(ag, ap, fn, is_fn, {"status":"error","message":str(e)}, 400)
 
     try:
         raw = call_bedrock(build_proposal_prompt(grant, ngo))
@@ -176,13 +181,17 @@ def lambda_handler(event: dict, context: Any) -> dict:
             dynamodb.Table(PROPOSALS_TABLE).put_item(Item={"proposalId":pid,"ngoId":nid,"grantId":gid,"pdfS3Key":s3_key,"status":"generated","createdAt":datetime.now(timezone.utc).isoformat()})
         except: pass
 
-        return _resp(ag, ap, {"status":"success","proposalId":pid,"downloadUrl":url,"s3Key":s3_key,
+        return _resp(ag, ap, fn, is_fn, {"status":"success","proposalId":pid,"downloadUrl":url,"s3Key":s3_key,
                              "summary":f"Proposal generated for {grant.get('programName','')} by {grant.get('corporationName','')}. Download ready.","content":content}, 200)
     except Exception as e:
         logger.exception(f"Failed: {e}")
-        return _resp(ag, ap, {"status":"error","message":"Proposal generation failed. Please try again."}, 500)
+        return _resp(ag, ap, fn, is_fn, {"status":"error","message":"Proposal generation failed. Please try again."}, 500)
 
 
-def _resp(ag, ap, body, code):
+def _resp(ag, ap, fn, is_fn, body, code):
+    body_str = json.dumps(body)
+    if is_fn:
+        return {"messageVersion":"1.0","response":{"actionGroup":ag,"function":fn,
+                "functionResponse":{"responseBody":{"TEXT":{"body":body_str}}}}}
     return {"messageVersion":"1.0","response":{"actionGroup":ag,"apiPath":ap,"httpMethod":"POST","httpStatusCode":code,
-            "responseBody":{"application/json":{"body":json.dumps(body)}}}}
+            "responseBody":{"application/json":{"body":body_str}}}}

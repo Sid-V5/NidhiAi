@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { getSession, isProfileComplete } from "@/lib/auth";
 import { generateReport, getComplianceStatus, listProposals } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -48,9 +48,11 @@ export default function ReportsPage() {
     const [quarter, setQuarter] = useState("Q4-2025");
     const quarters = ["Q1-2025", "Q2-2025", "Q3-2025", "Q4-2025", "Q1-2026"];
 
-    if (typeof window !== "undefined" && !isProfileComplete()) {
-        router.push("/profile");
-    }
+    useEffect(() => {
+        if (!isProfileComplete()) {
+            router.push("/profile");
+        }
+    }, [router]);
 
     const advanceTrace = useCallback((stepIndex: number) => {
         setTraceSteps(prev => prev.map((s, i) => {

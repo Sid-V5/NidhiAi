@@ -4,6 +4,7 @@
  * Demo mode creates a real NGO profile via API for judges to test.
  */
 import { CognitoUserPool, CognitoUser, AuthenticationDetails, CognitoUserAttribute } from "amazon-cognito-identity-js";
+import { getProfile } from "./api";
 
 const POOL_ID = process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || "ap-south-1_AhSLOaKId";
 const CLIENT_ID = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || "4e7gnb5b7h205qu55a1chaah66";
@@ -88,13 +89,28 @@ export function signIn(email: string, password: string): Promise<UserSession> {
         const user = new CognitoUser({ Username: email, Pool: userPool });
         const authDetails = new AuthenticationDetails({ Username: email, Password: password });
         user.authenticateUser(authDetails, {
-            onSuccess: (result) => {
+            onSuccess: async (result) => {
                 const token = result.getIdToken().getJwtToken();
                 const payload = result.getIdToken().payload;
-                const session: UserSession = {
+                let session: UserSession = {
                     userId: payload.sub, ngoId: "", ngoName: "",
                     email: payload.email || email, token, isDemo: false,
                 };
+
+                try {
+                    localStorage.setItem("nidhiai_token", token);
+                    const res = await getProfile(undefined, payload.sub);
+                    if (res.ok && res.data) {
+                        const p = (res.data as Record<string, unknown>).profile as Record<string, string>;
+                        if (p && p.ngoId) {
+                            session.ngoId = p.ngoId;
+                            session.ngoName = p.ngoName || "";
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch profile during sign in", e);
+                }
+
                 setSession(session);
                 resolve(session);
             },

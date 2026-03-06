@@ -90,11 +90,38 @@ export default function DashboardPage() {
             status: "active",
         }]);
 
+        let docsStr = '[]';
+        try {
+            const compRes = await getComplianceStatus(session.ngoId);
+            if (compRes.ok && compRes.data) {
+                const results = (compRes.data as Record<string, unknown>).results as Array<Record<string, unknown>> || [];
+                const mappedDocs = results.map((r) => {
+                    let s3Key = "";
+                    try {
+                        const parsedResult = typeof r.complianceResult === "string" ? JSON.parse(r.complianceResult) : r.complianceResult;
+                        s3Key = (parsedResult as Record<string, unknown>)?.s3Key as string || "";
+                    } catch (e) {
+                        console.error(e);
+                    }
+                    return {
+                        s3Bucket: "nidhiai-documents",
+                        s3Key: s3Key || `${session.ngoId}/compliance/${r.documentType}_cert.pdf`,
+                        documentType: r.documentType
+                    };
+                });
+                if (mappedDocs.length > 0) {
+                    docsStr = JSON.stringify(mappedDocs);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to fetch fresh compliance keys", e);
+        }
+
         const supervisorAgentId = process.env.NEXT_PUBLIC_SUPERVISOR_AGENT_ID || "HB82HPMIA3";
         const fullPrompt = [
             `NGO: "${session.ngoName}" (ID: ${session.ngoId})`,
             `S3 Bucket: nidhiai-documents`,
-            `Documents: [{"s3Bucket":"nidhiai-documents","s3Key":"${session.ngoId}/compliance/12A_cert.pdf","documentType":"12A"},{"s3Bucket":"nidhiai-documents","s3Key":"${session.ngoId}/compliance/80G_cert.pdf","documentType":"80G"},{"s3Bucket":"nidhiai-documents","s3Key":"${session.ngoId}/compliance/CSR1_cert.pdf","documentType":"CSR1"}]`,
+            `Documents: ${docsStr}`,
             `Sector: Education | Location: India`,
             `Request: ${text}`,
         ].join("\n");

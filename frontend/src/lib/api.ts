@@ -31,8 +31,10 @@ export async function createProfile(profile: {
   return request("/profile", { method: "POST", body: JSON.stringify(profile) });
 }
 
-export async function getProfile(ngoId: string) {
-  return request(`/profile?ngoId=${ngoId}`);
+export async function getProfile(ngoId?: string, userId?: string) {
+  if (ngoId) return request(`/profile?ngoId=${ngoId}`);
+  if (userId) return request(`/profile?userId=${userId}`);
+  return request(`/profile`);
 }
 
 // Upload

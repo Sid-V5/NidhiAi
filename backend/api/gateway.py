@@ -114,11 +114,22 @@ def handle_profile_create(body: dict, user_id: str) -> dict:
 
 def handle_profile_get(params: dict) -> dict:
     ngo_id = params.get("ngoId", "")
+    user_id = params.get("userId", "")
+    
     if ngo_id:
         result = dynamodb.Table(NGO_TABLE).get_item(Key={"ngoId": ngo_id})
         item = result.get("Item")
         if item:
             return resp(200, {"profile": item})
+    elif user_id:
+        # Scan by userId 
+        result = dynamodb.Table(NGO_TABLE).scan(
+            FilterExpression=boto3.dynamodb.conditions.Attr("userId").eq(user_id)
+        )
+        items = result.get("Items", [])
+        if items:
+            return resp(200, {"profile": items[0]})
+            
     return resp(404, {"error": "Profile not found."})
 
 

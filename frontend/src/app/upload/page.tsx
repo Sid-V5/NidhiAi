@@ -27,9 +27,11 @@ export default function UploadPage() {
     const [selectedType, setSelectedType] = useState<DocType>("12A");
     const fileRef = useRef<HTMLInputElement>(null);
 
-    if (typeof window !== "undefined" && !isProfileComplete()) {
-        router.push("/profile");
-    }
+    useEffect(() => {
+        if (!isProfileComplete()) {
+            router.push("/profile");
+        }
+    }, [router]);
 
     const updateDoc = (index: number, updates: Partial<UploadedDoc>) => {
         setDocs(prev => prev.map((d, i) => i === index ? { ...d, ...updates } : d));

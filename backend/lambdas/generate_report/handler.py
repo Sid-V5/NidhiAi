@@ -170,10 +170,15 @@ def lambda_handler(event: dict, context: Any) -> dict:
     logger.info(f"Event: {json.dumps(event)}")
     ag = event.get("actionGroup", "generate_report")
     ap = event.get("apiPath", "/generate-report")
+    fn = event.get("function", ""); is_fn = bool(fn)
 
     try:
-        props = event.get("requestBody",{}).get("content",{}).get("application/json",{}).get("properties",[])
-        params = {p["name"]: p["value"] for p in props}
+        if is_fn:
+            params_list = event.get("parameters", [])
+            params = {p["name"]: p["value"] for p in params_list}
+        else:
+            props = event.get("requestBody",{}).get("content",{}).get("application/json",{}).get("properties",[])
+            params = {p["name"]: p["value"] for p in props}
 
         ngo_id = params.get("ngoId", "")
         ngo_name = params.get("ngoName", "NGO")
@@ -190,7 +195,7 @@ def lambda_handler(event: dict, context: Any) -> dict:
         if ngo_name == "NGO" and profile.get("ngoName"):
             ngo_name = profile["ngoName"]
     except Exception as e:
-        return _resp(ag, ap, {"status":"error","message":str(e)}, 400)
+        return _resp(ag, ap, fn, is_fn, {"status":"error","message":str(e)}, 400)
 
     try:
         prompt = f"""Generate a quarterly CSR impact report in JSON for:
@@ -219,13 +224,17 @@ Return JSON:
         summary = (f"Impact report generated for {ngo_name} ({period}). "
                    f"{beneficiaries} beneficiaries served, Rs {funds_utilized:,} utilized across {programs} programs.")
 
-        return _resp(ag, ap, {"status":"success","reportId":report_id,"report":report,
+        return _resp(ag, ap, fn, is_fn, {"status":"success","reportId":report_id,"report":report,
                               "summary":summary,"downloadUrl":download_url,"s3Key":s3_key}, 200)
     except Exception as e:
         logger.exception(f"Failed: {e}")
-        return _resp(ag, ap, {"status":"error","message":"Report generation failed."}, 500)
+        return _resp(ag, ap, fn, is_fn, {"status":"error","message":"Report generation failed."}, 500)
 
 
-def _resp(ag, ap, body, code):
+def _resp(ag, ap, fn, is_fn, body, code):
+    body_str = json.dumps(body)
+    if is_fn:
+        return {"messageVersion":"1.0","response":{"actionGroup":ag,"function":fn,
+                "functionResponse":{"responseBody":{"TEXT":{"body":body_str}}}}}
     return {"messageVersion":"1.0","response":{"actionGroup":ag,"apiPath":ap,"httpMethod":"POST","httpStatusCode":code,
-            "responseBody":{"application/json":{"body":json.dumps(body)}}}}
+            "responseBody":{"application/json":{"body":body_str}}}}

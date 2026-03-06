@@ -116,7 +116,7 @@ export default function CompliancePage() {
                                         </div>
                                     </div>
                                     <div style={{ textAlign: "right" }}>
-                                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Confidence</div>
+                                        <div style={{ fontSize: 11, color: "var(--text-muted)", cursor: "help" }} title="AWS Textract OCR confidence score for document parsing">Confidence ℹ️</div>
                                         <div className="telemetry-text" style={{ fontSize: 18, fontWeight: 700, color: "var(--blue)" }}>{cert.confidence}%</div>
                                     </div>
                                 </div>

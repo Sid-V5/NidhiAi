@@ -234,7 +234,13 @@ def scan_single_document(bucket: str, key: str, doc_type: str, ngo_id: str) -> d
         }
         if ngo_id:
             store_compliance_result(ngo_id, doc_type, result)
-        return result
+        
+        # Strip the massive extracted text so we don't blow up the Agent's context limit
+        agent_friendly_result = result.copy()
+        if "extractedText" in agent_friendly_result:
+            del agent_friendly_result["extractedText"]
+            
+        return agent_friendly_result
     except Exception as e:
         return {"documentType": doc_type, "s3Key": key, "error": str(e), "processingTimeMs": int((time.time() - start_time) * 1000)}
 

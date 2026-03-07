@@ -47,7 +47,7 @@ export default function ProfilePage() {
         e.preventDefault();
         setError(""); setSuccess(""); setSaving(true);
 
-        const res = await createProfile(form);
+        const res = await createProfile({ ...form, userId: session.userId });
         if (res.ok && res.data) {
             const data = res.data as Record<string, unknown>;
             const ngoId = data.ngoId as string;

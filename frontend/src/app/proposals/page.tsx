@@ -31,7 +31,7 @@ export default function ProposalsPage() {
         async function load() {
             const [propRes, grantRes] = await Promise.all([
                 listProposals(session.ngoId),
-                searchGrants({ ngoSector: "Education", ngoDescription: session.ngoName || "NGO", location: "India" }),
+                searchGrants({ ngoSector: session.ngoName || "NGO", ngoDescription: session.ngoName || "NGO", location: "India" }),
             ]);
             if (propRes.ok && propRes.data) {
                 const raw = (propRes.data.proposals as Array<Record<string, unknown>>) || [];
@@ -69,7 +69,7 @@ export default function ProposalsPage() {
 
         const res = await generateProposal({
             ngoId: session.ngoId, grantId: selectedGrantId,
-            ngoName: session.ngoName, ngoDescription: "Education NGO focused on tribal literacy",
+            ngoName: session.ngoName, ngoDescription: `${session.ngoName} seeking CSR grants`,
             grantDetails: selectedGrant || {},
         });
 

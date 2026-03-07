@@ -76,7 +76,7 @@ export default function GrantsPage() {
     const loadGrants = async (query?: string) => {
         setLoading(true); setError("");
         const res = await searchGrants({
-            ngoSector: session.ngoName ? "Education" : "",
+            ngoSector: session.ngoName || "NGO",
             ngoDescription: query || session.ngoName || "NGO",
             location: "India",
         });
@@ -136,7 +136,7 @@ export default function GrantsPage() {
 
         const res = await generateProposal({
             ngoId: session.ngoId, grantId, ngoName: session.ngoName,
-            ngoDescription: "Education NGO focused on tribal literacy",
+            ngoDescription: `${session.ngoName} seeking CSR grants`,
             grantDetails: grant,
         });
 

@@ -27,6 +27,7 @@ export async function createProfile(profile: {
   ngoName: string; panCard: string; sector: string; description?: string;
   contactEmail?: string; contactPhone?: string;
   city?: string; state?: string; pincode?: string; registrationDate?: string;
+  userId?: string;
 }) {
   return request("/profile", { method: "POST", body: JSON.stringify(profile) });
 }

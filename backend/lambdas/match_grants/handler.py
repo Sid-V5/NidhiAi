@@ -29,7 +29,7 @@ bedrock_runtime = boto3.client(
 KNOWLEDGE_BASE_ID = os.environ.get("GRANT_OPPORTUNITIES_KB_ID", "")
 # Model for Grant Scout - use Nova Lite for cost efficiency as per instructions
 GRANT_SCOUT_MODEL_ID = os.environ.get("GRANT_SCOUT_MODEL_ID", "amazon.nova-lite-v1:0")
-MAX_RESULTS = 5
+MAX_RESULTS = 20
 
 
 def retrieve_and_generate(query: str, kb_id: str, model_arn: str) -> dict:
@@ -248,7 +248,7 @@ def rank_grants_parallel(grants: list, ngo_sector: str, ngo_description: str, lo
     """
     start_time = time.time()
 
-    with ThreadPoolExecutor(max_workers=min(len(grants), 5)) as executor:
+    with ThreadPoolExecutor(max_workers=min(len(grants), 15)) as executor:
         futures = {
             executor.submit(score_single_grant, grant, ngo_sector, ngo_description, location): grant["grantId"]
             for grant in grants

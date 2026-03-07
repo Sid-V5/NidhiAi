@@ -32,7 +32,7 @@ export default function DashboardPage() {
             // Fetch real stats from AWS in parallel
             const [compRes, grantRes, propRes, profileRes] = await Promise.all([
                 getComplianceStatus(session.ngoId),
-                searchGrants({ ngoSector: session.ngoName ? "Education" : "", ngoDescription: session.ngoName, location: "India" }),
+                searchGrants({ ngoSector: session.ngoName || "NGO", ngoDescription: session.ngoName || "NGO", location: "India" }),
                 listProposals(session.ngoId),
                 getProfile(session.ngoId),
             ]);

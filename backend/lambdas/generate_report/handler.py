@@ -186,11 +186,11 @@ def lambda_handler(event: dict, context: Any) -> dict:
 
         # Fetch real data from DynamoDB profile to fill missing params
         profile = fetch_ngo_profile(ngo_id) if ngo_id else {}
-        sector = params.get("sector", profile.get("sector", "Education"))
-        beneficiaries = int(params.get("beneficiariesServed", profile.get("beneficiariesServed", 500)))
-        programs = int(params.get("programsCompleted", profile.get("programsCompleted", 3)))
-        funds_utilized = int(params.get("fundsUtilized", profile.get("fundsUtilized", 300000)))
-        geographic_reach = params.get("geographicReach", profile.get("geographicReach", "3 districts"))
+        sector = params.get("sector", profile.get("sector", "NGO Sector"))
+        beneficiaries = int(params.get("beneficiariesServed", profile.get("beneficiariesServed", 0)))
+        programs = int(params.get("programsCompleted", profile.get("programsCompleted", 0)))
+        funds_utilized = int(params.get("fundsUtilized", profile.get("fundsUtilized", 0)))
+        geographic_reach = params.get("geographicReach", profile.get("geographicReach", "Regional"))
         # Use profile name if Supervisor only passed ngoId
         if ngo_name == "NGO" and profile.get("ngoName"):
             ngo_name = profile["ngoName"]

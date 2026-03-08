@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { getSession, isProfileComplete } from "@/lib/auth";
-import { getComplianceStatus, searchGrants, listProposals, getProfile, invokeAgent, generateProposal } from "@/lib/api";
+import { getComplianceStatus, searchGrants, listProposals, getProfile, invokeAgent, generateProposal, generateReport } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from 'react-markdown';
 import AgentTrace, { type TraceEvent } from "@/components/AgentTrace";
 
 interface ChatMessage {
@@ -143,9 +144,9 @@ export default function DashboardPage() {
         return { hasVerify, hasGrant, hasProposal, hasReport };
     }
 
-    // Dynamic Client-Side Chain: runs requested combinations of Compliance → Grants → Proposal
+    // Dynamic Client-Side Chain: runs requested combinations of Compliance → Grants → Proposal → Report
     const runClientChain = useCallback(async (actions: { hasVerify: boolean, hasGrant: boolean, hasProposal: boolean, hasReport: boolean }) => {
-        const { hasVerify, hasGrant, hasProposal } = actions;
+        const { hasVerify, hasGrant, hasProposal, hasReport } = actions;
         const now = Date.now();
         const traces: TraceEvent[] = [];
         const addTrace = (t: TraceEvent) => {
@@ -156,7 +157,8 @@ export default function DashboardPage() {
         const flowName = [
             hasVerify && "Verify",
             hasGrant && "Search Grants",
-            hasProposal && "Generate Proposal"
+            hasProposal && "Generate Proposal",
+            hasReport && "Generate Impact Report"
         ].filter(Boolean).join(" → ");
 
         addTrace({ type: "planning", agentName: "Supervisor", action: `Planning workflow: ${flowName}`, timestamp: now, status: "done" });
@@ -248,6 +250,36 @@ export default function DashboardPage() {
             }
         }
 
+        // ── Step 4: Impact Report Generation (if requested) ──
+        let reportSummary = "";
+        let reportUrl = "";
+        if (hasReport) {
+            const repStart = Date.now();
+            addTrace({ type: "agent_invocation", agentName: "Impact Reporter", action: `Generating impact report for recent activities...`, timestamp: repStart, status: "active" });
+            try {
+                // Determine current quarter
+                const date = new Date();
+                const q = Math.floor(date.getMonth() / 3) + 1;
+                const quarter = `Q${q} ${date.getFullYear()}`;
+
+                // Call generate report (dummy activity data for now - could be pulled from profile)
+                const repRes = await generateReport(session.ngoId, quarter, [
+                    { date: "2024-01-15", description: "Conducted community workshop on digital literacy", beneficiaries: 150, location: "Village Center" },
+                    { date: "2024-02-10", description: "Distributed educational kits to local schools", beneficiaries: 300, location: "Primary School A" }
+                ]);
+
+                if (repRes.ok && repRes.data) {
+                    const data = repRes.data as { reportId?: string; downloadUrl?: string };
+                    reportUrl = data.downloadUrl || "";
+                    reportSummary = `Impact Report for ${quarter} generated successfully!`;
+                } else {
+                    reportSummary = "Report generation failed: " + (repRes.error || "Unknown error");
+                }
+            } catch { reportSummary = "Report generation encountered an error"; }
+            traces[traces.length - 1] = { ...traces[traces.length - 1], status: "done", observation: reportSummary, durationMs: Date.now() - (traces[traces.length - 1].timestamp || Date.now()) };
+            setCurrentTraces([...traces]);
+        }
+
         addTrace({ type: "completion", agentName: "Supervisor", action: "Workflow complete", timestamp: Date.now(), status: "done", durationMs: Date.now() - now });
 
         // Build final response
@@ -268,6 +300,12 @@ export default function DashboardPage() {
         } else if (hasProposal) {
             const stepNum = hasVerify ? '3' : '2';
             response += `### ${stepNum}. Proposal Generation\n${proposalSummary}\n`;
+        }
+
+        if (hasReport) {
+            const stepNum = (hasVerify ? 1 : 0) + (hasGrant || hasProposal ? 1 : 0) + (hasProposal ? 1 : 0) + 1;
+            response += `### ${stepNum}. Impact Report\n${reportSummary}\n`;
+            if (reportUrl) response += `\n📥 **[Download Impact Report PDF](${reportUrl})**\n`;
         }
 
         const actionLinks = detectActionLinks(response);
@@ -496,7 +534,48 @@ export default function DashboardPage() {
                                             background: "rgba(129,140,248,0.05)", border: "1px solid rgba(129,140,248,0.2)",
                                             color: "var(--text-primary)", whiteSpace: "pre-wrap",
                                         }}>
-                                            {msg.content}
+                                            <ReactMarkdown
+                                                components={{
+                                                    h4({ ...props }) {
+                                                        return <h4 style={{ fontSize: 13, marginTop: 12, marginBottom: 8, color: "var(--text-primary)" }} {...props} />;
+                                                    },
+                                                    p({ children, ...props }: { children?: React.ReactNode } & React.HTMLAttributes<HTMLParagraphElement>) {
+                                                        return <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 8, color: "var(--text-secondary)" }} {...props}>{children}</p>;
+                                                    },
+                                                    a({ href, children, ...props }: { href?: string, children?: React.ReactNode } & React.AnchorHTMLAttributes<HTMLAnchorElement>) {
+                                                        const isPdf = href?.includes('.pdf') || typeof children === 'string' && children.toLowerCase().includes('download');
+                                                        if (isPdf) {
+                                                            return (
+                                                                <a href={href} target="_blank" rel="noopener noreferrer"
+                                                                    style={{
+                                                                        display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                                                        background: 'var(--primary)', color: 'white',
+                                                                        padding: '8px 16px', borderRadius: '6px',
+                                                                        textDecoration: 'none', fontWeight: 500,
+                                                                        fontSize: '13px', marginTop: '8px', marginBottom: '8px',
+                                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                                    }} {...props}>
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                                                    </svg>
+                                                                    {children}
+                                                                </a>
+                                                            );
+                                                        }
+                                                        return <a href={href} style={{ color: "var(--primary)", textDecoration: "none" }} {...props}>{children}</a>;
+                                                    },
+                                                    ul({ ...props }) {
+                                                        return <ul style={{ listStyleType: "disc", paddingLeft: 20, marginBottom: 8 }} {...props} />;
+                                                    },
+                                                    li({ children, ...props }: { children?: React.ReactNode } & React.LiHTMLAttributes<HTMLLIElement>) {
+                                                        return <li style={{ fontSize: 13, lineHeight: 1.5, color: "var(--text-secondary)" }} {...props}>{children}</li>;
+                                                    },
+                                                }}
+                                            >
+                                                {msg.content}
+                                            </ReactMarkdown>
                                         </div>
                                     )}
                                     {/* Action links */}

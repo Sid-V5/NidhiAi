@@ -133,18 +133,19 @@ export default function DashboardPage() {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, agentRunning]);
 
-    // Detect if prompt is a full-automation request
-    function isFullAutomation(text: string): boolean {
+    // Detect requested actions from prompt
+    function parsePromptActions(text: string) {
         const lower = text.toLowerCase();
         const hasVerify = /verif|compliance|check.*doc|scan/i.test(lower);
         const hasGrant = /grant|fund|csr|match/i.test(lower);
         const hasProposal = /proposal|draft|generat/i.test(lower);
-        // Need at least 2 of 3 actions mentioned
-        return [hasVerify, hasGrant, hasProposal].filter(Boolean).length >= 2;
+        const hasReport = /report|impact/i.test(lower);
+        return { hasVerify, hasGrant, hasProposal, hasReport };
     }
 
-    // Full automation: chain compliance → grants → proposal with live progress
-    const runFullAutomation = useCallback(async () => {
+    // Dynamic Client-Side Chain: runs requested combinations of Compliance → Grants → Proposal
+    const runClientChain = useCallback(async (actions: { hasVerify: boolean, hasGrant: boolean, hasProposal: boolean, hasReport: boolean }) => {
+        const { hasVerify, hasGrant, hasProposal } = actions;
         const now = Date.now();
         const traces: TraceEvent[] = [];
         const addTrace = (t: TraceEvent) => {
@@ -152,102 +153,121 @@ export default function DashboardPage() {
             setCurrentTraces([...traces]);
         };
 
-        addTrace({ type: "planning", agentName: "Supervisor", action: "Planning full automation: Verify → Search → Generate", timestamp: now, status: "done" });
+        const flowName = [
+            hasVerify && "Verify",
+            hasGrant && "Search Grants",
+            hasProposal && "Generate Proposal"
+        ].filter(Boolean).join(" → ");
 
-        // ── Step 1: Compliance ──
-        addTrace({ type: "agent_invocation", agentName: "Compliance", action: "Scanning uploaded documents...", timestamp: Date.now(), status: "active" });
+        addTrace({ type: "planning", agentName: "Supervisor", action: `Planning workflow: ${flowName}`, timestamp: now, status: "done" });
+
         let complianceSummary = "";
-        try {
-            const compRes = await getComplianceStatus(session.ngoId);
-            if (compRes.ok && compRes.data) {
-                const d = compRes.data as Record<string, unknown>;
-                const valid = d.validDocuments as number || 0;
-                const total = d.totalDocuments as number || 3;
-                const results = (d.results as Array<Record<string, unknown>>) || [];
-                const docNames = results.map(r => `${r.documentType}: ${r.status === "VALID" || r.complianceResult ? "✅" : "⚠️"}`).join(", ");
-                complianceSummary = `${valid}/${total} documents verified (${docNames})`;
-                setComplianceResults(results);
-                setStats(prev => ({ ...prev, docs: `${valid}/${total}`, score: `${Math.round((valid / total) * 100)}%` }));
-            } else {
-                complianceSummary = "Could not retrieve compliance status";
-            }
-        } catch { complianceSummary = "Compliance check encountered an error"; }
-        traces[traces.length - 1] = { ...traces[traces.length - 1], status: "done", observation: complianceSummary, durationMs: Date.now() - now };
-        setCurrentTraces([...traces]);
-
-        // ── Step 2: Grant Search ──
-        const grantStart = Date.now();
-        addTrace({ type: "agent_invocation", agentName: "Grant Scout", action: "Searching CSR grants matching your profile...", timestamp: grantStart, status: "active" });
-        let topGrant: Record<string, unknown> | null = null;
         let grantSummary = "";
-        try {
-            const grantRes = await searchGrants({
-                ngoSector: profileSector || "Education",
-                ngoDescription: profileDescription || session.ngoName || "NGO",
-                location: "India",
-            });
-            if (grantRes.ok && grantRes.data) {
-                const grants = grantRes.data.grants || [];
-                setStats(prev => ({ ...prev, grants: String(grants.length) }));
-                if (grants.length > 0) {
-                    topGrant = grants[0] as Record<string, unknown>;
-                    const grantName = (topGrant.programName || topGrant.grantTitle || "CSR Grant") as string;
-                    const corp = (topGrant.corporationName || topGrant.corporation || "") as string;
-                    grantSummary = `Found ${grants.length} grants. Top match: "${grantName}" by ${corp}`;
-                } else {
-                    grantSummary = "No matching grants found";
-                }
-            } else {
-                grantSummary = "Grant search returned no results";
-            }
-        } catch { grantSummary = "Grant search encountered an error"; }
-        traces[traces.length - 1] = { ...traces[traces.length - 1], status: "done", observation: grantSummary, durationMs: Date.now() - grantStart };
-        setCurrentTraces([...traces]);
-
-        // ── Step 3: Proposal Generation ──
         let proposalSummary = "";
+        let topGrant: Record<string, unknown> | null = null;
         let downloadUrl = "";
-        if (topGrant) {
-            const propStart = Date.now();
-            addTrace({ type: "agent_invocation", agentName: "Proposal Writer", action: `Generating proposal for "${(topGrant.programName || topGrant.grantTitle || "Grant") as string}"...`, timestamp: propStart, status: "active" });
+
+        // ── Step 1: Compliance (if requested) ──
+        if (hasVerify) {
+            addTrace({ type: "agent_invocation", agentName: "Compliance", action: "Scanning uploaded documents...", timestamp: Date.now(), status: "active" });
             try {
-                const propRes = await generateProposal({
-                    ngoId: session.ngoId,
-                    grantId: (topGrant.grantId || topGrant.id || "grant-001") as string,
-                    ngoName: session.ngoName,
-                    ngoDescription: profileDescription || session.ngoName,
-                    grantDetails: topGrant,
-                });
-                if (propRes.ok && propRes.data) {
-                    downloadUrl = propRes.data.downloadUrl || "";
-                    proposalSummary = `Proposal generated successfully!${downloadUrl ? " PDF ready for download." : ""}`;
-                    // Refresh proposals count
-                    const propList = await listProposals(session.ngoId);
-                    if (propList.ok && propList.data) setStats(prev => ({ ...prev, proposals: String(propList.data!.proposals.length) }));
+                const compRes = await getComplianceStatus(session.ngoId);
+                if (compRes.ok && compRes.data) {
+                    const d = compRes.data as Record<string, unknown>;
+                    const valid = d.validDocuments as number || 0;
+                    const total = d.totalDocuments as number || 3;
+                    const results = (d.results as Array<Record<string, unknown>>) || [];
+                    const docNames = results.map(r => `${r.documentType}: ${r.status === "VALID" || r.complianceResult ? "✅" : "⚠️"}`).join(", ");
+                    complianceSummary = `${valid}/${total} documents verified (${docNames})`;
+                    setComplianceResults(results);
+                    setStats(prev => ({ ...prev, docs: `${valid}/${total}`, score: `${Math.round((valid / total) * 100)}%` }));
                 } else {
-                    proposalSummary = "Proposal generation failed: " + (propRes.error || "Unknown error");
+                    complianceSummary = "Could not retrieve compliance status";
                 }
-            } catch { proposalSummary = "Proposal generation encountered an error"; }
-            traces[traces.length - 1] = { ...traces[traces.length - 1], status: "done", observation: proposalSummary, durationMs: Date.now() - (traces[traces.length - 1].timestamp || Date.now()) };
+            } catch { complianceSummary = "Compliance check encountered an error"; }
+            traces[traces.length - 1] = { ...traces[traces.length - 1], status: "done", observation: complianceSummary, durationMs: Date.now() - (traces[traces.length - 1].timestamp || Date.now()) };
             setCurrentTraces([...traces]);
         }
 
-        addTrace({ type: "completion", agentName: "Supervisor", action: "Full automation complete", timestamp: Date.now(), status: "done", durationMs: Date.now() - now });
+        // ── Step 2: Grant Search (if requested or strongly implied by proposal) ──
+        if (hasGrant || hasProposal) {
+            const grantStart = Date.now();
+            addTrace({ type: "agent_invocation", agentName: "Grant Scout", action: "Searching CSR grants matching your profile...", timestamp: grantStart, status: "active" });
+            try {
+                const grantRes = await searchGrants({
+                    ngoSector: profileSector || "Education",
+                    ngoDescription: profileDescription || session.ngoName || "NGO",
+                    location: "India",
+                });
+                if (grantRes.ok && grantRes.data) {
+                    const grants = grantRes.data.grants || [];
+                    setStats(prev => ({ ...prev, grants: String(grants.length) }));
+                    if (grants.length > 0) {
+                        topGrant = grants[0] as Record<string, unknown>;
+                        const grantName = (topGrant.programName || topGrant.grantTitle || "CSR Grant") as string;
+                        const corp = (topGrant.corporationName || topGrant.corporation || "") as string;
+                        grantSummary = `Found ${grants.length} grants. Top match: "${grantName}" by ${corp}`;
+                    } else {
+                        grantSummary = "No matching grants found";
+                    }
+                } else {
+                    grantSummary = "Grant search returned no results";
+                }
+            } catch { grantSummary = "Grant search encountered an error"; }
+            traces[traces.length - 1] = { ...traces[traces.length - 1], status: "done", observation: grantSummary, durationMs: Date.now() - grantStart };
+            setCurrentTraces([...traces]);
+        }
+
+        // ── Step 3: Proposal Generation (if requested) ──
+        if (hasProposal) {
+            if (topGrant) {
+                const propStart = Date.now();
+                addTrace({ type: "agent_invocation", agentName: "Proposal Writer", action: `Generating proposal for "${(topGrant.programName || topGrant.grantTitle || "Grant") as string}"...`, timestamp: propStart, status: "active" });
+                try {
+                    const propRes = await generateProposal({
+                        ngoId: session.ngoId,
+                        grantId: (topGrant.grantId || topGrant.id || "grant-001") as string,
+                        ngoName: session.ngoName,
+                        ngoDescription: profileDescription || session.ngoName,
+                        grantDetails: topGrant,
+                    });
+                    if (propRes.ok && propRes.data) {
+                        downloadUrl = propRes.data.downloadUrl || "";
+                        proposalSummary = `Proposal generated successfully!${downloadUrl ? " PDF ready for download." : ""}`;
+                        // Refresh proposals count
+                        const propList = await listProposals(session.ngoId);
+                        if (propList.ok && propList.data) setStats(prev => ({ ...prev, proposals: String(propList.data!.proposals.length) }));
+                    } else {
+                        proposalSummary = "Proposal generation failed: " + (propRes.error || "Unknown error");
+                    }
+                } catch { proposalSummary = "Proposal generation encountered an error"; }
+                traces[traces.length - 1] = { ...traces[traces.length - 1], status: "done", observation: proposalSummary, durationMs: Date.now() - (traces[traces.length - 1].timestamp || Date.now()) };
+                setCurrentTraces([...traces]);
+            } else {
+                proposalSummary = "Skipped — no matching grants found to draft a proposal for.";
+            }
+        }
+
+        addTrace({ type: "completion", agentName: "Supervisor", action: "Workflow complete", timestamp: Date.now(), status: "done", durationMs: Date.now() - now });
 
         // Build final response
-        let response = `## ✅ Full Automation Complete\n\n`;
-        response += `### 1. Compliance Verification\n${complianceSummary}\n\n`;
-        response += `### 2. Grant Matching\n${grantSummary}\n\n`;
-        if (topGrant) {
+        let response = `## ✅ Workflow Complete\n\n`;
+        if (hasVerify) response += `### 1. Compliance Verification\n${complianceSummary}\n\n`;
+        if (hasGrant || hasProposal) {
+            response += `### ${hasVerify ? '2' : '1'}. Grant Matching\n${grantSummary}\n\n`;
+        }
+        if (hasProposal && topGrant) {
+            const stepNum = hasVerify ? '3' : '2';
             const gName = (topGrant.programName || topGrant.grantTitle || "Grant") as string;
             const gCorp = (topGrant.corporationName || topGrant.corporation || "") as string;
             const gAmt = topGrant.fundingRange ? JSON.stringify(topGrant.fundingRange) : (topGrant.amount || "");
-            response += `### 3. Proposal Generation\n${proposalSummary}\n`;
+            response += `### ${stepNum}. Proposal Generation\n${proposalSummary}\n`;
             response += `- **Grant:** ${gName}\n- **Corporation:** ${gCorp}\n`;
             if (gAmt) response += `- **Funding:** ${gAmt}\n`;
             if (downloadUrl) response += `\n📥 **[Download Proposal PDF](${downloadUrl})**\n`;
-        } else {
-            response += `### 3. Proposal Generation\nSkipped — no matching grants found.\n`;
+        } else if (hasProposal) {
+            const stepNum = hasVerify ? '3' : '2';
+            response += `### ${stepNum}. Proposal Generation\n${proposalSummary}\n`;
         }
 
         const actionLinks = detectActionLinks(response);
@@ -268,16 +288,17 @@ export default function DashboardPage() {
         setAgentStartTime(now);
         setAgentRunning(true);
 
-        // Full automation: chain API calls directly instead of relying on supervisor
-        if (isFullAutomation(text)) {
+        const actions = parsePromptActions(text);
+        // If the prompt is asking for specific actions (not general Q&A / reports), handle client-side
+        if (!actions.hasReport && (actions.hasVerify || actions.hasGrant || actions.hasProposal)) {
             setCurrentTraces([{
                 type: "planning",
                 agentName: "Supervisor",
-                action: "Full automation detected — orchestrating agents directly",
+                action: "Workflow detected — routing directly to requested internal agents",
                 timestamp: now,
                 status: "active",
             }]);
-            await runFullAutomation();
+            await runClientChain(actions);
             setAgentRunning(false);
             return;
         }
@@ -391,7 +412,7 @@ export default function DashboardPage() {
         }
 
         setAgentRunning(false);
-    }, [prompt, agentRunning, agentSessionId, session.ngoId, session.ngoName, profileSector, profileDescription, runFullAutomation]);
+    }, [prompt, agentRunning, agentSessionId, session.ngoId, session.ngoName, profileSector, profileDescription, runClientChain]);
 
     /** Get compliance status for a doc type from COMPLIANCE_TABLE results */
     const getDocStatus = (docType: string): string => {

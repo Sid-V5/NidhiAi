@@ -1,9 +1,48 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { getSession, isProfileComplete } from "@/lib/auth";
 import { getComplianceStatus, searchGrants, listProposals, getProfile, invokeAgent } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import AgentTrace, { type TraceEvent } from "@/components/AgentTrace";
+
+interface ChatMessage {
+    role: "user" | "assistant";
+    content: string;
+    traces?: TraceEvent[];
+    actionLinks?: { label: string; href: string; icon: string }[];
+}
+
+/** Parse XML function-call tags from Bedrock agent completions */
+function parseAgentResponse(raw: string): string {
+    if (!raw) return "";
+    const contentMatch = raw.match(/<__parameter=content>([\s\S]*?)(<\/__parameter>|$)/i);
+    if (contentMatch) {
+        return contentMatch[1].replace(/<\/?__[^>]*>/g, "").trim();
+    }
+    if (raw.includes("<__function=")) {
+        return raw.replace(/<\/?__[^>]*>/g, "").trim() || raw;
+    }
+    return raw;
+}
+
+/** Detect action keywords in agent response and return relevant page links */
+function detectActionLinks(text: string): { label: string; href: string; icon: string }[] {
+    const links: { label: string; href: string; icon: string }[] = [];
+    const lower = text.toLowerCase();
+    if (lower.includes("proposal") || lower.includes("draft") || lower.includes("generated")) {
+        links.push({ label: "View Proposals", href: "/proposals", icon: "📝" });
+    }
+    if (lower.includes("grant") || lower.includes("funding") || lower.includes("csr")) {
+        links.push({ label: "View Grants", href: "/grants", icon: "🔍" });
+    }
+    if (lower.includes("compliance") || lower.includes("document") || lower.includes("upload") || lower.includes("12a") || lower.includes("80g")) {
+        links.push({ label: "View Compliance", href: "/upload", icon: "⚖️" });
+    }
+    if (lower.includes("report") || lower.includes("impact")) {
+        links.push({ label: "View Reports", href: "/reports", icon: "📊" });
+    }
+    return links;
+}
 
 export default function DashboardPage() {
     const session = getSession();
@@ -11,16 +50,21 @@ export default function DashboardPage() {
     const [stats, setStats] = useState({ docs: "...", grants: "...", proposals: "...", score: "..." });
     const [loading, setLoading] = useState(true);
 
-    // Command bar state
+    // Profile data (real, not hardcoded)
+    const [profileSector, setProfileSector] = useState("");
+    const [profileDescription, setProfileDescription] = useState("");
+
+    // Multi-turn conversation
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [prompt, setPrompt] = useState("");
     const [agentRunning, setAgentRunning] = useState(false);
-    const [agentTraces, setAgentTraces] = useState<TraceEvent[]>([]);
-    const [agentCompletion, setAgentCompletion] = useState("");
+    const [currentTraces, setCurrentTraces] = useState<TraceEvent[]>([]);
     const [agentStartTime, setAgentStartTime] = useState(0);
     const [agentSessionId, setAgentSessionId] = useState<string | undefined>();
+    const chatEndRef = useRef<HTMLDivElement>(null);
 
-    // Compliance status from DynamoDB
-    const [complianceStatus, setComplianceStatus] = useState<Record<string, unknown> | null>(null);
+    // Compliance from COMPLIANCE_TABLE (not profile)
+    const [complianceResults, setComplianceResults] = useState<Array<Record<string, unknown>>>([]);
 
     useEffect(() => {
         if (!isProfileComplete()) {
@@ -29,25 +73,28 @@ export default function DashboardPage() {
         }
 
         async function loadDashboard() {
-            // Fetch profile first to get sector/description for grant search
+            // Fetch profile for real sector/description
             const profileRes = await getProfile(session.ngoId);
-            let profileSector = session.ngoName || "NGO";
-            let profileDescription = session.ngoName || "NGO";
+            let sector = "";
+            let description = "";
 
             if (profileRes.ok && profileRes.data) {
                 const profile = profileRes.data as Record<string, unknown>;
                 const p = profile.profile as Record<string, unknown>;
-                if (p?.sector) profileSector = p.sector as string;
-                if (p?.description) profileDescription = p.description as string;
-                if (p?.complianceStatus) {
-                    setComplianceStatus(p.complianceStatus as Record<string, unknown>);
-                }
+                if (p?.sector) sector = p.sector as string;
+                if (p?.description) description = p.description as string;
             }
+            setProfileSector(sector);
+            setProfileDescription(description);
 
-            // Fetch remaining stats from AWS in parallel using profile data
+            // Fetch stats from AWS using real profile data
             const [compRes, grantRes, propRes] = await Promise.all([
                 getComplianceStatus(session.ngoId),
-                searchGrants({ ngoSector: profileSector, ngoDescription: profileDescription, location: "India" }),
+                searchGrants({
+                    ngoSector: sector || session.ngoName || "NGO",
+                    ngoDescription: description || session.ngoName || "NGO",
+                    location: "India",
+                }),
                 listProposals(session.ngoId),
             ]);
 
@@ -55,6 +102,8 @@ export default function DashboardPage() {
                 const d = compRes.data as Record<string, unknown>;
                 const valid = d.validDocuments as number || 0;
                 const total = d.totalDocuments as number || 3;
+                const results = (d.results as Array<Record<string, unknown>>) || [];
+                setComplianceResults(results);
                 setStats(prev => ({ ...prev, docs: `${valid}/${total}`, score: `${Math.round((valid / total) * 100)}%` }));
             } else {
                 setStats(prev => ({ ...prev, docs: "0/3", score: "0%" }));
@@ -79,16 +128,24 @@ export default function DashboardPage() {
         loadDashboard();
     }, [session.ngoId, session.ngoName, router]);
 
-    // Send prompt to Supervisor Agent
+    // Auto-scroll chat
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, agentRunning]);
+
+    // Send prompt to Supervisor Agent (multi-turn)
     const handleSubmit = useCallback(async () => {
         const text = prompt.trim();
         if (!text || agentRunning) return;
 
+        // Add user message to history
+        setMessages(prev => [...prev, { role: "user", content: text }]);
+        setPrompt("");
+
         const now = Date.now();
         setAgentStartTime(now);
         setAgentRunning(true);
-        setAgentCompletion("");
-        setAgentTraces([{
+        setCurrentTraces([{
             type: "planning",
             agentName: "Supervisor",
             action: "Analyzing request and planning workflow",
@@ -96,6 +153,7 @@ export default function DashboardPage() {
             status: "active",
         }]);
 
+        // Build context from real profile data
         let docsStr = '[]';
         try {
             const compRes = await getComplianceStatus(session.ngoId);
@@ -120,15 +178,17 @@ export default function DashboardPage() {
                 }
             }
         } catch (e) {
-            console.error("Failed to fetch fresh compliance keys", e);
+            console.error("Failed to fetch compliance keys", e);
         }
 
         const supervisorAgentId = process.env.NEXT_PUBLIC_SUPERVISOR_AGENT_ID || "HB82HPMIA3";
+        // Use REAL profile data — no hardcoded sector
         const fullPrompt = [
             `NGO: "${session.ngoName}" (ID: ${session.ngoId})`,
             `S3 Bucket: nidhiai-documents`,
             `Documents: ${docsStr}`,
-            `Sector: Education | Location: India`,
+            `Sector: ${profileSector || "Not specified"} | Location: India`,
+            `Description: ${profileDescription || "Not specified"}`,
             `Request: ${text}`,
         ].join("\n");
 
@@ -138,7 +198,6 @@ export default function DashboardPage() {
             const { completion, sessionId: sid, traces } = res.data;
             setAgentSessionId(sid);
 
-            // Parse real Bedrock traces into TraceEvent format
             const parsedTraces: TraceEvent[] = [{
                 type: "planning",
                 agentName: "Supervisor",
@@ -176,26 +235,32 @@ export default function DashboardPage() {
                 status: "done",
             });
 
-            setAgentTraces(parsedTraces);
-            setAgentCompletion(completion || "No response generated.");
-        } else {
-            setAgentTraces(prev => [...prev, {
-                type: "error",
-                agentName: "Supervisor",
-                action: "Agent invocation failed",
-                observation: res.error || "Check Bedrock Agent configuration",
-                timestamp: Date.now(),
-                status: "error",
+            const parsedCompletion = parseAgentResponse(completion || "No response generated.");
+            const actionLinks = detectActionLinks(parsedCompletion);
+
+            setMessages(prev => [...prev, {
+                role: "assistant",
+                content: parsedCompletion,
+                traces: parsedTraces,
+                actionLinks,
             }]);
+            setCurrentTraces([]);
+        } else {
+            setMessages(prev => [...prev, {
+                role: "assistant",
+                content: `⚠️ ${res.error || "Agent invocation failed. Please try again."}`,
+            }]);
+            setCurrentTraces([]);
         }
 
         setAgentRunning(false);
-    }, [prompt, agentRunning, agentSessionId, session.ngoId, session.ngoName]);
+    }, [prompt, agentRunning, agentSessionId, session.ngoId, session.ngoName, profileSector, profileDescription]);
 
-    const certStatus = (key: string): string => {
-        if (!complianceStatus) return "unknown";
-        const cert = complianceStatus[key] as Record<string, unknown> | undefined;
-        return (cert?.status as string) || "not_uploaded";
+    /** Get compliance status for a doc type from COMPLIANCE_TABLE results */
+    const getDocStatus = (docType: string): string => {
+        const result = complianceResults.find(r => r.documentType === docType);
+        if (!result) return "not_uploaded";
+        return (result.status as string) || "pending";
     };
 
     const statusBadge = (status: string) => {
@@ -231,7 +296,7 @@ export default function DashboardPage() {
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                    placeholder="Ask NidhiAI: &quot;Verify my documents and find education grants in Jharkhand&quot;"
+                    placeholder={messages.length > 0 ? "Follow up with the Supervisor Agent..." : "Ask NidhiAI anything — verify docs, find grants, draft proposals..."}
                     disabled={agentRunning}
                 />
                 <button className="command-bar__send" onClick={handleSubmit} disabled={agentRunning || !prompt.trim()}>
@@ -241,24 +306,86 @@ export default function DashboardPage() {
                 </button>
             </div>
 
-            {/* Agent Trace (visible after first prompt or while running) */}
-            {(agentTraces.length > 0 || agentRunning) && (
+            {/* Multi-turn Conversation History */}
+            {messages.length > 0 && (
+                <div style={{ marginBottom: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+                    {messages.map((msg, i) => (
+                        <div key={i}>
+                            {msg.role === "user" ? (
+                                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                                    <div style={{
+                                        maxWidth: "70%", padding: "10px 16px", borderRadius: "14px 14px 4px 14px",
+                                        background: "var(--accent)", color: "#fff", fontSize: 14, lineHeight: 1.6,
+                                    }}>
+                                        {msg.content}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    {/* Agent traces for this message */}
+                                    {msg.traces && msg.traces.length > 0 && (
+                                        <AgentTrace
+                                            traces={msg.traces}
+                                            isRunning={false}
+                                            startTime={msg.traces[0]?.timestamp || 0}
+                                            completion={msg.content}
+                                        />
+                                    )}
+                                    {/* If no traces, just show the completion */}
+                                    {(!msg.traces || msg.traces.length === 0) && (
+                                        <div style={{
+                                            padding: "16px 20px", borderRadius: 12, fontSize: 14, lineHeight: 1.7,
+                                            background: "rgba(129,140,248,0.05)", border: "1px solid rgba(129,140,248,0.2)",
+                                            color: "var(--text-primary)", whiteSpace: "pre-wrap",
+                                        }}>
+                                            {msg.content}
+                                        </div>
+                                    )}
+                                    {/* Action links */}
+                                    {msg.actionLinks && msg.actionLinks.length > 0 && (
+                                        <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+                                            {msg.actionLinks.map((link) => (
+                                                <a key={link.href} href={link.href}
+                                                    className="btn-secondary" style={{ fontSize: 12, padding: "6px 14px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                                    {link.icon} {link.label} →
+                                                </a>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+
+                    {/* Currently running agent trace */}
+                    {agentRunning && (
+                        <AgentTrace
+                            traces={currentTraces}
+                            isRunning={true}
+                            startTime={agentStartTime}
+                        />
+                    )}
+                    <div ref={chatEndRef} />
+                </div>
+            )}
+
+            {/* Agent running indicator (when no messages yet) */}
+            {agentRunning && messages.length === 0 && (
                 <div style={{ marginBottom: 24 }}>
                     <AgentTrace
-                        traces={agentTraces}
-                        isRunning={agentRunning}
+                        traces={currentTraces}
+                        isRunning={true}
                         startTime={agentStartTime}
-                        completion={agentCompletion}
                     />
                 </div>
             )}
 
-            {/* Sample prompts */}
-            {agentTraces.length === 0 && !agentRunning && (
+            {/* Sample prompts (only shown before first message) */}
+            {messages.length === 0 && !agentRunning && (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 28 }}>
                     {[
                         { icon: "⚖️", text: "Check my compliance status", prompt: "Check my compliance status and verify all uploaded documents" },
-                        { icon: "🔍", text: "Find grants for education", prompt: "Find CSR grants matching my NGO's focus on education in India" },
+                        { icon: "🔍", text: "Find grants for my sector", prompt: `Find CSR grants matching my NGO's profile` },
                         { icon: "📝", text: "Draft a proposal", prompt: "Generate a grant proposal for the best matching CSR opportunity" },
                     ].map(s => (
                         <button key={s.text} onClick={() => { setPrompt(s.prompt); }}
@@ -290,24 +417,24 @@ export default function DashboardPage() {
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24 }}>
-                {/* Compliance Overview from DynamoDB */}
+                {/* Compliance Overview — from COMPLIANCE_TABLE, not profile */}
                 <div className="corporate-card">
-                    <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Compliance Status (from DynamoDB)</h3>
+                    <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Compliance Status</h3>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                         {[
-                            { key: "certificate12A", label: "12A Certificate" },
-                            { key: "certificate80G", label: "80G Certificate" },
-                            { key: "certificateCSR1", label: "CSR-1 Certificate" },
+                            { key: "12A", label: "12A Certificate" },
+                            { key: "80G", label: "80G Certificate" },
+                            { key: "CSR1", label: "CSR-1 Certificate" },
                         ].map(c => (
                             <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderRadius: 6, background: "var(--bg-primary)", border: "1px solid var(--border)" }}>
                                 <span style={{ fontSize: 13, fontWeight: 500 }}>{c.label}</span>
-                                {statusBadge(certStatus(c.key))}
+                                {statusBadge(getDocStatus(c.key))}
                             </div>
                         ))}
                     </div>
-                    {complianceStatus === null && !loading && (
+                    {complianceResults.length === 0 && !loading && (
                         <div style={{ marginTop: 12, fontSize: 12, color: "var(--text-muted)" }}>
-                            No profile data found. <a href="/upload" style={{ color: "var(--accent)" }}>Upload documents</a> to begin.
+                            No documents scanned yet. <a href="/upload" style={{ color: "var(--accent)" }}>Upload documents</a> to begin.
                         </div>
                     )}
                 </div>

@@ -309,7 +309,12 @@ def handle_proposals_list(ngo_id: str) -> dict:
             if s3_key:
                 p["downloadUrl"] = s3.generate_presigned_url(
                     "get_object",
-                    Params={"Bucket": PDF_BUCKET, "Key": s3_key},
+                    Params={
+                        "Bucket": PDF_BUCKET,
+                        "Key": s3_key,
+                        "ResponseContentType": "application/pdf",
+                        "ResponseContentDisposition": "inline",
+                    },
                     ExpiresIn=3600,
                 )
         return resp(200, {"proposals": proposals})
@@ -331,12 +336,12 @@ def handle_report_generate(body: dict) -> dict:
         "requestBody": {"content": {"application/json": {"properties": [
             {"name": "ngoId", "value": body.get("ngoId", "")},
             {"name": "ngoName", "value": activity.get("ngoName", body.get("ngoName", ""))},
-            {"name": "reportingPeriod", "value": body.get("quarter", "Q4-FY2026")},
-            {"name": "sector", "value": activity.get("sector", "Education")},
-            {"name": "beneficiariesServed", "value": str(activity.get("beneficiariesServed", 500))},
-            {"name": "programsCompleted", "value": str(activity.get("proposalsGenerated", 3))},
-            {"name": "fundsUtilized", "value": str(activity.get("fundsUtilized", 300000))},
-            {"name": "geographicReach", "value": activity.get("geographicReach", "3 districts")},
+            {"name": "reportingPeriod", "value": body.get("quarter", "")},
+            {"name": "sector", "value": activity.get("sector", "")},
+            {"name": "beneficiariesServed", "value": str(activity.get("beneficiariesServed", 0))},
+            {"name": "programsCompleted", "value": str(activity.get("proposalsGenerated", 0))},
+            {"name": "fundsUtilized", "value": str(activity.get("fundsUtilized", 0))},
+            {"name": "geographicReach", "value": activity.get("geographicReach", "")},
         ]}}},
     }
     result = invoke_lambda(REPORT_LAMBDA, event)

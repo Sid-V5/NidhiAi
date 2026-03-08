@@ -216,7 +216,12 @@ def lambda_handler(event: dict, context: Any) -> dict:
         s3_key = f"{nid}/proposals/{gid}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.pdf"
 
         s3_client.put_object(Bucket=PROPOSALS_BUCKET, Key=s3_key, Body=pdf_bytes, ContentType="application/pdf")
-        url = s3_client.generate_presigned_url("get_object", Params={"Bucket":PROPOSALS_BUCKET,"Key":s3_key}, ExpiresIn=3600)
+        url = s3_client.generate_presigned_url("get_object", Params={
+            "Bucket": PROPOSALS_BUCKET,
+            "Key": s3_key,
+            "ResponseContentType": "application/pdf",
+            "ResponseContentDisposition": "inline",
+        }, ExpiresIn=3600)
 
         try:
             dynamodb.Table(PROPOSALS_TABLE).put_item(Item={"proposalId":pid,"ngoId":nid,"grantId":gid,"pdfS3Key":s3_key,"status":"generated","createdAt":datetime.now(timezone.utc).isoformat()})

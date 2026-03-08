@@ -1,71 +1,56 @@
-"""Quick test of the Supervisor Agent with prompts a judge would try."""
-import boto3, json
+"""Test the Supervisor Agent with the full automation prompt."""
+import boto3, json, traceback
 
-rt = boto3.client('bedrock-agent-runtime', region_name='ap-south-1')
-AGENT_ID = 'HB82HPMIA3'
-ALIAS = 'TSTALIASID'
+client = boto3.client("bedrock-agent-runtime", region_name="ap-south-1")
 
-# Context that the frontend sends
-CONTEXT = """NGO: "Asha Foundation" (ID: ngo-43aaf34)
+AGENT_ID = "HB82HPMIA3"
+ALIAS_ID = "TSTALIASID"
+
+input_text = """NGO: "Test Foundation" (ID: ngo-43aaff34)
 S3 Bucket: nidhiai-documents
-Documents: [{"s3Bucket":"nidhiai-documents","s3Key":"ngo-43aaf34/compliance/12A_cert.pdf","documentType":"12A"}]
+Documents: [{"s3Bucket":"nidhiai-documents","s3Key":"ngo-43aaff34/compliance/12A_cert.pdf","documentType":"12A"},{"s3Bucket":"nidhiai-documents","s3Key":"ngo-43aaff34/compliance/80G_cert.pdf","documentType":"80G"},{"s3Bucket":"nidhiai-documents","s3Key":"ngo-43aaff34/compliance/PAN_cert.pdf","documentType":"PAN"}]
 Sector: Education | Location: India
-Description: Empowering underprivileged children through quality education in rural India"""
+Description: Education NGO working in rural India
+Request: Verify all my compliance documents, find the best matching CSR grants for my NGO, and generate a proposal for the top match"""
 
-TESTS = [
-    "Check my compliance status and verify all uploaded documents",
-    "Find CSR grants matching my NGO's profile",
-    "Verify my docs and find grants for education in India",
-]
-
-for test in TESTS:
-    prompt = f"{CONTEXT}\nRequest: {test}"
-    print(f"\n{'='*60}")
-    print(f"TEST: {test}")
-    print(f"{'='*60}")
+print("Invoking Supervisor Agent...")
+try:
+    r = client.invoke_agent(
+        agentId=AGENT_ID, agentAliasId=ALIAS_ID,
+        sessionId="test-full-auto-123",
+        inputText=input_text,
+        enableTrace=True,
+    )
     
-    try:
-        r = rt.invoke_agent(
-            agentId=AGENT_ID, agentAliasId=ALIAS,
-            sessionId=f"test-{hash(test) % 10000}",
-            inputText=prompt, enableTrace=True,
-        )
-        
-        completion = ""
-        trace_agents = set()
-        failure = None
-        
-        for event in r.get("completion", []):
-            if "chunk" in event:
-                chunk_bytes = event["chunk"].get("bytes", b"")
-                completion += chunk_bytes.decode("utf-8") if isinstance(chunk_bytes, bytes) else str(chunk_bytes)
-            if "trace" in event:
-                td = event["trace"].get("trace", {})
-                if "orchestrationTrace" in td:
-                    orch = td["orchestrationTrace"]
-                    if "invocationInput" in orch:
-                        inv = orch["invocationInput"]
-                        ag = inv.get("actionGroupInvocationInput", {}).get("actionGroupName", "")
-                        if ag: trace_agents.add(ag)
-                    if "observation" in orch:
-                        obs = orch["observation"]
-                        if obs.get("finalResponse", {}).get("text", ""):
-                            pass  # normal
-                if "failureTrace" in td:
-                    failure = td["failureTrace"].get("failureReason", "unknown")
-        
-        status = "FAILURE" if failure else ("SUCCESS" if completion else "EMPTY")
-        if "unable to assist" in completion.lower() or "sorry" in completion.lower()[:30]:
-            status = "NEEDS_IMPROVEMENT"
-        
-        print(f"STATUS: {status}")
-        if trace_agents:
-            print(f"AGENTS CALLED: {', '.join(trace_agents)}")
-        if failure:
-            print(f"FAILURE: {failure[:200]}")
-        print(f"RESPONSE ({len(completion)} chars): {completion[:400]}")
-        
-    except Exception as e:
-        print(f"ERROR: {str(e)[:200]}")
+    completion = ""
+    trace_count = 0
+    for event in r.get("completion", []):
+        if "chunk" in event:
+            chunk_bytes = event["chunk"].get("bytes", b"")
+            text = chunk_bytes.decode("utf-8") if isinstance(chunk_bytes, bytes) else str(chunk_bytes)
+            completion += text
+        if "trace" in event:
+            trace_count += 1
+            raw = event["trace"]
+            td = raw.get("trace", {})
+            if "orchestrationTrace" in td:
+                orch = td["orchestrationTrace"]
+                if "invocationInput" in orch:
+                    inv = orch["invocationInput"]
+                    ag = inv.get("actionGroupInvocationInput", {})
+                    if ag:
+                        print(f"  -> Calling: {ag.get('actionGroupName','?')} / {ag.get('function','?')}")
+                if "observation" in orch:
+                    obs = orch["observation"]
+                    if obs.get("actionGroupInvocationOutput"):
+                        out = str(obs["actionGroupInvocationOutput"].get("text",""))[:150]
+                        print(f"  <- Result: {out}")
 
-print("\n\nDone!")
+    print(f"\nTrace events: {trace_count}")
+    print(f"Completion length: {len(completion)}")
+    print(f"\n--- COMPLETION ---")
+    print(completion[:800])
+    
+except Exception as e:
+    print(f"ERROR: {e}")
+    traceback.print_exc()

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { listProposals, generateProposal, searchGrants } from "@/lib/api";
 
@@ -14,15 +15,17 @@ interface GrantOption {
 
 export default function ProposalsPage() {
     const session = getSession();
+    const searchParams = useSearchParams();
+    const urlGrantId = searchParams.get("grantId") || "";
     const [proposals, setProposals] = useState<Proposal[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [grantsDone] = useState(true); // Gate handled by Supervisor Agent orchestration
+    const [grantsDone] = useState(true);
 
     const [activeTab, setActiveTab] = useState<"history" | "draft">("draft");
     const [isGenerating, setIsGenerating] = useState(false);
     const [streamedText, setStreamedText] = useState("");
-    const [selectedGrantId, setSelectedGrantId] = useState("");
+    const [selectedGrantId, setSelectedGrantId] = useState(urlGrantId);
     const [availableGrants, setAvailableGrants] = useState<GrantOption[]>([]);
     const [activeGrantLabel, setActiveGrantLabel] = useState("");
     const [downloadUrl, setDownloadUrl] = useState("");
@@ -49,16 +52,22 @@ export default function ProposalsPage() {
 
             if (grantRes.ok && grantRes.data) {
                 const grants = (grantRes.data.grants as Array<Record<string, unknown>>) || [];
-                setAvailableGrants(grants.map(g => ({
+                const grantOptions = grants.map(g => ({
                     grantId: (g.grantId as string) || "",
                     programName: (g.programName as string) || "Grant",
                     corporationName: (g.corporationName as string) || "",
-                })));
+                }));
+                setAvailableGrants(grantOptions);
+                // Auto-select grant from URL params (set by grants page redirect)
+                if (urlGrantId && grantOptions.some(g => g.grantId === urlGrantId)) {
+                    setSelectedGrantId(urlGrantId);
+                    setActiveTab("draft");
+                }
             }
             setLoading(false);
         }
         load();
-    }, [session.ngoId, session.ngoName]);
+    }, [session.ngoId, session.ngoName, urlGrantId]);
 
     const handleGenerate = async () => {
         if (!selectedGrantId) { alert("Please select a grant first."); return; }

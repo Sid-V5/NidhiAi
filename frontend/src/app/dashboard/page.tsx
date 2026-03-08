@@ -29,12 +29,26 @@ export default function DashboardPage() {
         }
 
         async function loadDashboard() {
-            // Fetch real stats from AWS in parallel
-            const [compRes, grantRes, propRes, profileRes] = await Promise.all([
+            // Fetch profile first to get sector/description for grant search
+            const profileRes = await getProfile(session.ngoId);
+            let profileSector = session.ngoName || "NGO";
+            let profileDescription = session.ngoName || "NGO";
+
+            if (profileRes.ok && profileRes.data) {
+                const profile = profileRes.data as Record<string, unknown>;
+                const p = profile.profile as Record<string, unknown>;
+                if (p?.sector) profileSector = p.sector as string;
+                if (p?.description) profileDescription = p.description as string;
+                if (p?.complianceStatus) {
+                    setComplianceStatus(p.complianceStatus as Record<string, unknown>);
+                }
+            }
+
+            // Fetch remaining stats from AWS in parallel using profile data
+            const [compRes, grantRes, propRes] = await Promise.all([
                 getComplianceStatus(session.ngoId),
-                searchGrants({ ngoSector: session.ngoName || "NGO", ngoDescription: session.ngoName || "NGO", location: "India" }),
+                searchGrants({ ngoSector: profileSector, ngoDescription: profileDescription, location: "India" }),
                 listProposals(session.ngoId),
-                getProfile(session.ngoId),
             ]);
 
             if (compRes.ok && compRes.data) {
@@ -58,14 +72,6 @@ export default function DashboardPage() {
                 setStats(prev => ({ ...prev, proposals: String(proposals.length) }));
             } else {
                 setStats(prev => ({ ...prev, proposals: "0" }));
-            }
-
-            if (profileRes.ok && profileRes.data) {
-                const profile = profileRes.data as Record<string, unknown>;
-                const p = profile.profile as Record<string, unknown>;
-                if (p?.complianceStatus) {
-                    setComplianceStatus(p.complianceStatus as Record<string, unknown>);
-                }
             }
 
             setLoading(false);

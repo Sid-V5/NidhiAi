@@ -22,26 +22,35 @@ export default function ProfilePage() {
 
     useEffect(() => {
         async function load() {
+            // Try to load by ngoId first, fallback to userId for new sign-ins
+            let res;
             if (session.ngoId) {
-                const res = await getProfile(session.ngoId);
-                if (res.ok && res.data) {
-                    const p = (res.data as Record<string, unknown>).profile as Record<string, string>;
-                    if (p) {
-                        setForm({
-                            ngoName: p.ngoName || "", panCard: p.panCard || "", sector: p.sector || "",
-                            description: p.description || "", contactEmail: p.contactEmail || "",
-                            contactPhone: p.contactPhone || "",
-                            city: p.city || "", state: p.state || "", pincode: p.pincode || "",
-                            registrationDate: p.registrationDate || "",
-                        });
-                        setHasProfile(true);
+                res = await getProfile(session.ngoId);
+            } else if (session.userId) {
+                res = await getProfile(undefined, session.userId);
+            }
+            if (res?.ok && res.data) {
+                const p = (res.data as Record<string, unknown>).profile as Record<string, string>;
+                if (p) {
+                    setForm({
+                        ngoName: p.ngoName || "", panCard: p.panCard || "", sector: p.sector || "",
+                        description: p.description || "", contactEmail: p.contactEmail || "",
+                        contactPhone: p.contactPhone || "",
+                        city: p.city || "", state: p.state || "", pincode: p.pincode || "",
+                        registrationDate: p.registrationDate || "",
+                    });
+                    setHasProfile(true);
+                    // Update session with ngoId if it was missing
+                    if (!session.ngoId && p.ngoId) {
+                        const { setSession } = await import("@/lib/auth");
+                        setSession({ ...session, ngoId: p.ngoId, ngoName: p.ngoName || "" });
                     }
                 }
             }
             setLoading(false);
         }
         load();
-    }, [session.ngoId]);
+    }, [session.ngoId, session.userId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

@@ -93,23 +93,58 @@ def handle_profile_create(body: dict, user_id: str) -> dict:
     if not validate_pan(pan_card):
         return resp(400, {"error": "PAN Card must be in format AAAAA9999A (e.g., ABCDE1234F)."})
 
-    ngo_id = f"ngo-{str(uuid.uuid4())[:8]}"
     now = datetime.now(timezone.utc).isoformat()
-    item = {
-        "ngoId": ngo_id, "userId": user_id, "ngoName": ngo_name, "panCard": pan_card,
-        "sector": sector, "description": body.get("description", ""),
-        "contactEmail": body.get("contactEmail", ""), "contactPhone": body.get("contactPhone", ""),
-        "city": body.get("city", ""), "state": body.get("state", ""),
-        "pincode": body.get("pincode", ""), "registrationDate": body.get("registrationDate", ""),
-        "complianceStatus": {
-            "certificate12A": {"uploaded": False, "status": "not_uploaded"},
-            "certificate80G": {"uploaded": False, "status": "not_uploaded"},
-            "certificateCSR1": {"uploaded": False, "status": "not_uploaded"},
-        },
-        "createdAt": now, "updatedAt": now,
-    }
-    dynamodb.Table(NGO_TABLE).put_item(Item=item)
-    return resp(200, {"ngoId": ngo_id, "profile": item})
+    table = dynamodb.Table(NGO_TABLE)
+
+    # Check if profile already exists for this userId (upsert logic)
+    existing = None
+    try:
+        scan_result = table.scan(
+            FilterExpression=boto3.dynamodb.conditions.Attr("userId").eq(user_id)
+        )
+        items = scan_result.get("Items", [])
+        if items:
+            existing = items[0]
+    except Exception as e:
+        logger.warning(f"Profile scan for userId {user_id} failed: {e}")
+
+    if existing:
+        # Update existing profile — keep original ngoId, createdAt, and complianceStatus
+        ngo_id = existing["ngoId"]
+        item = {
+            **existing,
+            "ngoName": ngo_name, "panCard": pan_card, "sector": sector,
+            "description": body.get("description", existing.get("description", "")),
+            "contactEmail": body.get("contactEmail", existing.get("contactEmail", "")),
+            "contactPhone": body.get("contactPhone", existing.get("contactPhone", "")),
+            "city": body.get("city", existing.get("city", "")),
+            "state": body.get("state", existing.get("state", "")),
+            "pincode": body.get("pincode", existing.get("pincode", "")),
+            "registrationDate": body.get("registrationDate", existing.get("registrationDate", "")),
+            "updatedAt": now,
+        }
+        table.put_item(Item=item)
+        logger.info(f"Updated existing profile {ngo_id} for userId {user_id}")
+        return resp(200, {"ngoId": ngo_id, "profile": item})
+    else:
+        # Create new profile
+        ngo_id = f"ngo-{str(uuid.uuid4())[:8]}"
+        item = {
+            "ngoId": ngo_id, "userId": user_id, "ngoName": ngo_name, "panCard": pan_card,
+            "sector": sector, "description": body.get("description", ""),
+            "contactEmail": body.get("contactEmail", ""), "contactPhone": body.get("contactPhone", ""),
+            "city": body.get("city", ""), "state": body.get("state", ""),
+            "pincode": body.get("pincode", ""), "registrationDate": body.get("registrationDate", ""),
+            "complianceStatus": {
+                "certificate12A": {"uploaded": False, "status": "not_uploaded"},
+                "certificate80G": {"uploaded": False, "status": "not_uploaded"},
+                "certificateCSR1": {"uploaded": False, "status": "not_uploaded"},
+            },
+            "createdAt": now, "updatedAt": now,
+        }
+        table.put_item(Item=item)
+        logger.info(f"Created new profile {ngo_id} for userId {user_id}")
+        return resp(200, {"ngoId": ngo_id, "profile": item})
 
 
 def handle_profile_get(params: dict) -> dict:
@@ -275,7 +310,7 @@ def handle_proposals_list(ngo_id: str) -> dict:
                 p["downloadUrl"] = s3.generate_presigned_url(
                     "get_object",
                     Params={"Bucket": PDF_BUCKET, "Key": s3_key},
-                    ExpiresIn=300,
+                    ExpiresIn=3600,
                 )
         return resp(200, {"proposals": proposals})
     except Exception as e:

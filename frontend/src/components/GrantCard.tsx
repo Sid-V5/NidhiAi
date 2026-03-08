@@ -76,7 +76,7 @@ export default function GrantCard({
                 </div>
                 <button className="btn-primary" style={{ padding: "8px 16px", fontSize: 12 }}
                     onClick={(e) => { e.stopPropagation(); onSelect?.(grantId); }}>
-                    Generate Proposal
+                    Draft Proposal →
                 </button>
             </div>
         </div>

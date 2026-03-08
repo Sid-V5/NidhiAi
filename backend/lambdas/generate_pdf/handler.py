@@ -22,18 +22,50 @@ PROPOSAL_MODEL_ID = os.environ.get("PROPOSAL_MODEL_ID", "anthropic.claude-3-haik
 
 
 def build_proposal_prompt(grant: dict, ngo: dict) -> str:
-    return f"""You are an expert grant proposal writer for Indian NGOs. Generate a professional CSR grant proposal as JSON.
+    return f"""You are an expert grant proposal writer specializing in Indian CSR proposals under the Companies Act 2013. Generate a comprehensive, professional, investor-grade grant proposal.
 
-GRANT: {grant.get('corporationName','Corp')} - {grant.get('programName','Program')}
-Focus: {', '.join(grant.get('focusAreas',['social development']))}
-Funding: Rs {grant.get('fundingRange',{}).get('min',200000):,} - Rs {grant.get('fundingRange',{}).get('max',1000000):,}
+GRANT DETAILS:
+- Corporation: {grant.get('corporationName','Corporation')}
+- Program: {grant.get('programName','CSR Program')}
+- Focus Areas: {', '.join(grant.get('focusAreas',['social development']))}
+- Funding Range: Rs {grant.get('fundingRange',{}).get('min',200000):,} to Rs {grant.get('fundingRange',{}).get('max',1000000):,}
+- Geographic Scope: {', '.join(grant.get('geographicScope',['India']))}
 
-NGO: {ngo.get('ngoName','NGO')} | Sector: {ngo.get('sector','')} | PAN: {ngo.get('panCard','')}
+NGO DETAILS:
+- Name: {ngo.get('ngoName','NGO')}
+- Sector: {ngo.get('sector','Social Development')}
+- PAN: {ngo.get('panCard','')}
+- Description: {ngo.get('description', ngo.get('sector',''))}
 
-Return ONLY valid JSON:
-{{"executiveSummary":"200 words","organizationBackground":"150 words","problemStatement":"300 words with Indian statistics","proposedSolution":"400 words","budgetTable":[{{"category":"...","description":"...","amount":0,"justification":"..."}}],"impactMetrics":[{{"metric":"...","baseline":"...","target":"...","measurementMethod":"..."}}],"timeline":[{{"phase":"Phase 1","duration":"Month 1-3","milestones":["..."]}}],"conclusion":"150 words"}}
+Generate a DETAILED proposal as JSON. Each section must be thorough and substantive — this is a formal document for corporate CSR committees.
 
-Budget must total within the funding range. Include 4+ impact metrics and 3 timeline phases. Use Indian context."""
+Return ONLY valid JSON with these keys:
+{{
+  "executiveSummary": "Write 500+ words. Include: project vision, the critical need being addressed, proposed intervention approach, expected outcomes, total budget ask, and why this NGO is uniquely positioned. Reference Schedule VII of Companies Act 2013.",
+  "organizationBackground": "Write 400+ words. Cover: founding history, mission and vision, years of operation, key achievements with numbers, team strength, past CSR partnerships, geographic presence, and institutional credibility markers (12A, 80G, CSR-1 registration).",
+  "problemStatement": "Write 600+ words. Include: detailed description of the problem in Indian context, cite specific statistics and data points (population affected, current gaps in services, government data), root cause analysis, geographic specifics, affected demographics, and why existing solutions are insufficient.",
+  "proposedSolution": "Write 800+ words. Detail: comprehensive methodology, innovative approaches, implementation strategy with phases, target beneficiaries with numbers, activities and deliverables for each phase, partnerships and collaborations, technology or tools to be used, community engagement strategy, and sustainability plan beyond the grant period.",
+  "riskMitigation": "Write 300+ words. Identify 4-5 key risks (operational, financial, external, compliance) with specific mitigation strategies for each.",
+  "sustainabilityPlan": "Write 300+ words. Explain how the project will sustain itself after the grant period: revenue models, community ownership, institutional partnerships, scaling strategy.",
+  "budgetTable": [
+    {{"category": "...", "description": "Detailed description of expense", "amount": 0, "justification": "Why this expense is necessary"}}
+  ],
+  "impactMetrics": [
+    {{"metric": "Specific measurable indicator", "baseline": "Current state", "target": "Expected outcome with numbers", "measurementMethod": "How it will be tracked"}}
+  ],
+  "timeline": [
+    {{"phase": "Phase 1: Foundation", "duration": "Month 1-3", "milestones": ["Detailed milestone 1", "Detailed milestone 2", "Detailed milestone 3"]}}
+  ],
+  "conclusion": "Write 250+ words. Summarize: the transformative potential, alignment with CSR objectives under Schedule VII, the ask, and a compelling closing statement."
+}}
+
+CRITICAL REQUIREMENTS:
+- Budget must have 6+ line items totaling within the funding range (Rs {grant.get('fundingRange',{}).get('min',200000):,} to Rs {grant.get('fundingRange',{}).get('max',1000000):,})
+- Include 6+ impact metrics with quantifiable targets
+- Include 4 timeline phases spanning 12 months with 3+ milestones each
+- All content must be specific to Indian context with real statistics
+- Use formal, professional language suitable for corporate CSR committees
+- Total content should be equivalent to 5+ printed pages"""
 
 
 def call_bedrock(prompt: str) -> str:
@@ -42,7 +74,7 @@ def call_bedrock(prompt: str) -> str:
     for attempt in range(3):
         try:
             if is_claude:
-                body = {"anthropic_version":"bedrock-2023-05-31","max_tokens":4000,
+                body = {"anthropic_version":"bedrock-2023-05-31","max_tokens":8000,
                         "messages":[{"role":"user","content":prompt}],"temperature":0.7}
                 resp = bedrock_runtime.invoke_model(
                     modelId=PROPOSAL_MODEL_ID,
@@ -54,7 +86,7 @@ def call_bedrock(prompt: str) -> str:
                 resp = bedrock_runtime.converse(
                     modelId=PROPOSAL_MODEL_ID,
                     messages=[{"role":"user","content":[{"text":prompt}]}],
-                    inferenceConfig={"maxTokens":4000,"temperature":0.7})
+                    inferenceConfig={"maxTokens":8000,"temperature":0.7})
                 return resp["output"]["message"]["content"][0]["text"]
         except ClientError as e:
             if e.response["Error"]["Code"] == "ThrottlingException" and attempt < 2:
@@ -103,8 +135,17 @@ def generate_pdf_bytes(content: dict, grant: dict, ngo: dict) -> bytes:
     for title, key in sections:
         pdf.section(title); pdf.body(content.get(key,""))
 
+    # Risk Mitigation
+    if content.get("riskMitigation"):
+        pdf.section("5. Risk Mitigation"); pdf.body(content.get("riskMitigation",""))
+
+    # Sustainability Plan
+    if content.get("sustainabilityPlan"):
+        pdf.section("6. Sustainability Plan"); pdf.body(content.get("sustainabilityPlan",""))
+
     # Budget table
-    pdf.section("5. Budget Breakdown")
+    sec_num = 7
+    pdf.section(f"{sec_num}. Budget Breakdown")
     budget = content.get("budgetTable",[])
     if budget:
         pdf.set_font("Helvetica","B",9); pdf.set_fill_color(30,60,114); pdf.set_text_color(255,255,255)
@@ -121,14 +162,14 @@ def generate_pdf_bytes(content: dict, grant: dict, ngo: dict) -> bytes:
         pdf.cell(0,7,"",1,fill=True,ln=True); pdf.ln(5)
 
     # Impact metrics
-    pdf.section("6. Impact Metrics")
+    pdf.section(f"{sec_num+1}. Impact Metrics")
     for m in content.get("impactMetrics",[]):
         pdf.set_font("Helvetica","",10); pdf.set_text_color(60,60,60)
         pdf.multi_cell(0,6,f"* {m.get('metric','')}: {m.get('baseline','')} -> {m.get('target','')} ({m.get('measurementMethod','')})"); pdf.ln(1)
     pdf.ln(3)
 
     # Timeline
-    pdf.section("7. Timeline")
+    pdf.section(f"{sec_num+2}. Timeline")
     for p in content.get("timeline",[]):
         pdf.set_font("Helvetica","B",10); pdf.cell(0,7,f"{p.get('phase','')} ({p.get('duration','')})",ln=True)
         pdf.set_font("Helvetica","",10)
@@ -136,8 +177,8 @@ def generate_pdf_bytes(content: dict, grant: dict, ngo: dict) -> bytes:
         pdf.ln(2)
 
     # Conclusion + Declaration
-    pdf.section("8. Conclusion"); pdf.body(content.get("conclusion",""))
-    pdf.section("9. Declaration")
+    pdf.section(f"{sec_num+3}. Conclusion"); pdf.body(content.get("conclusion",""))
+    pdf.section(f"{sec_num+4}. Declaration")
     pdf.body(f"We, {ngo.get('ngoName','')}, declare all information is accurate. Authorized Signatory: ___________  Date: {datetime.now(timezone.utc).strftime('%B %d, %Y')}")
 
     result = pdf.output(dest="S")
@@ -175,7 +216,7 @@ def lambda_handler(event: dict, context: Any) -> dict:
         s3_key = f"{nid}/proposals/{gid}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.pdf"
 
         s3_client.put_object(Bucket=PROPOSALS_BUCKET, Key=s3_key, Body=pdf_bytes, ContentType="application/pdf")
-        url = s3_client.generate_presigned_url("get_object", Params={"Bucket":PROPOSALS_BUCKET,"Key":s3_key}, ExpiresIn=300)
+        url = s3_client.generate_presigned_url("get_object", Params={"Bucket":PROPOSALS_BUCKET,"Key":s3_key}, ExpiresIn=3600)
 
         try:
             dynamodb.Table(PROPOSALS_TABLE).put_item(Item={"proposalId":pid,"ngoId":nid,"grantId":gid,"pdfS3Key":s3_key,"status":"generated","createdAt":datetime.now(timezone.utc).isoformat()})

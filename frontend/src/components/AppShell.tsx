@@ -94,7 +94,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <Sidebar />
             </div>
 
-            <main className="page-container" style={{ marginLeft: 0, maxWidth: "100vw" }}>
+            <main className="page-container" style={{ marginLeft: 0, maxWidth: "100vw", paddingTop: 64 }}>
                 {children}
             </main>
         </>

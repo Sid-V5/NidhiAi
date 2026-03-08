@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import React, { useState, useEffect, useRef, type ReactNode } from "react";
+import ReactMarkdown from 'react-markdown';
 
 export interface TraceEvent {
     type: "planning" | "agent_invocation" | "observation" | "model_invocation" | "completion" | "error";
@@ -253,7 +254,59 @@ export default function AgentTrace({ traces, isRunning, startTime, completion }:
                     <div style={{
                         fontSize: 15, lineHeight: 1.7, color: "var(--text-primary)",
                         whiteSpace: "pre-wrap"
-                    }}>{completion}</div>
+                    }}>
+                        <ReactMarkdown
+                            components={{
+                                h2({ children, ...props }: { children?: React.ReactNode } & React.HTMLAttributes<HTMLHeadingElement>) {
+                                    return <h2 style={{ fontSize: 18, marginTop: 16, marginBottom: 12, color: "var(--text-primary)", borderBottom: "1px solid var(--border)", paddingBottom: 8 }} {...props}>{children}</h2>;
+                                },
+                                h3({ children, ...props }: { children?: React.ReactNode } & React.HTMLAttributes<HTMLHeadingElement>) {
+                                    return <h3 style={{ fontSize: 16, marginTop: 14, marginBottom: 8, color: "var(--text-primary)" }} {...props}>{children}</h3>;
+                                },
+                                h4({ children, ...props }: { children?: React.ReactNode } & React.HTMLAttributes<HTMLHeadingElement>) {
+                                    return <h4 style={{ fontSize: 14, marginTop: 12, marginBottom: 8, color: "var(--text-primary)" }} {...props}>{children}</h4>;
+                                },
+                                p({ children, ...props }: { children?: React.ReactNode } & React.HTMLAttributes<HTMLParagraphElement>) {
+                                    return <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 10, color: "var(--text-secondary)" }} {...props}>{children}</p>;
+                                },
+                                a({ href, children, ...props }: { href?: string, children?: React.ReactNode } & React.AnchorHTMLAttributes<HTMLAnchorElement>) {
+                                    const isPdf = href?.includes('.pdf') || (typeof children === 'string' && children.toLowerCase().includes('download'));
+                                    if (isPdf) {
+                                        return (
+                                            <a href={href} target="_blank" rel="noopener noreferrer"
+                                                style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                                    background: 'var(--primary)', color: 'white',
+                                                    padding: '8px 16px', borderRadius: '6px',
+                                                    textDecoration: 'none', fontWeight: 500,
+                                                    fontSize: '13px', marginTop: '12px', marginBottom: '12px',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                }} {...props}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                                </svg>
+                                                {children}
+                                            </a>
+                                        );
+                                    }
+                                    return <a href={href} style={{ color: "var(--primary)", textDecoration: "none" }} {...props}>{children}</a>;
+                                },
+                                ul({ ...props }) {
+                                    return <ul style={{ listStyleType: "disc", paddingLeft: 20, marginBottom: 10 }} {...props} />;
+                                },
+                                li({ children, ...props }: { children?: React.ReactNode } & React.LiHTMLAttributes<HTMLLIElement>) {
+                                    return <li style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text-secondary)", marginBottom: 4 }} {...props}>{children}</li>;
+                                },
+                                strong({ children, ...props }: { children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) {
+                                    return <strong style={{ fontWeight: 600, color: "var(--text-primary)" }} {...props}>{children}</strong>;
+                                }
+                            }}
+                        >
+                            {completion}
+                        </ReactMarkdown>
+                    </div>
                 </div>
             )}
 

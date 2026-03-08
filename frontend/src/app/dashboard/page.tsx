@@ -544,8 +544,17 @@ export default function DashboardPage() {
                                         }}>
                                             <ReactMarkdown
                                                 components={{
-                                                    h4({ ...props }) {
-                                                        return <h4 style={{ fontSize: 13, marginTop: 12, marginBottom: 8, color: "var(--text-primary)" }} {...props} />;
+                                                    h2({ children, ...props }: { children?: React.ReactNode } & React.HTMLAttributes<HTMLHeadingElement>) {
+                                                        return <h2 style={{ fontSize: 18, marginTop: 16, marginBottom: 12, color: "var(--text-primary)", borderBottom: "1px solid var(--border)", paddingBottom: 8 }} {...props}>{children}</h2>;
+                                                    },
+                                                    h3({ children, ...props }: { children?: React.ReactNode } & React.HTMLAttributes<HTMLHeadingElement>) {
+                                                        return <h3 style={{ fontSize: 16, marginTop: 14, marginBottom: 8, color: "var(--text-primary)" }} {...props}>{children}</h3>;
+                                                    },
+                                                    h4({ children, ...props }: { children?: React.ReactNode } & React.HTMLAttributes<HTMLHeadingElement>) {
+                                                        return <h4 style={{ fontSize: 13, marginTop: 12, marginBottom: 8, color: "var(--text-primary)" }} {...props}>{children}</h4>;
+                                                    },
+                                                    strong({ children, ...props }: { children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) {
+                                                        return <strong style={{ fontWeight: 600, color: "var(--text-primary)" }} {...props}>{children}</strong>;
                                                     },
                                                     p({ children, ...props }: { children?: React.ReactNode } & React.HTMLAttributes<HTMLParagraphElement>) {
                                                         return <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 8, color: "var(--text-secondary)" }} {...props}>{children}</p>;

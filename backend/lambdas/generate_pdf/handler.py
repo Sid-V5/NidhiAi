@@ -143,18 +143,18 @@ def generate_pdf_bytes(content: dict, grant: dict, ngo: dict) -> bytes:
                 self.set_text_color(60,60,60); self.ln(3)
             def body(self, text):
                 self.set_font("Helvetica","",10); self.set_text_color(60,60,60)
-                self.multi_cell(190,6,safe(text)); self.ln(4)
+                self.multi_cell(0,6,safe(text)); self.ln(4)
 
         pdf = PDF(); pdf.set_auto_page_break(auto=True, margin=20); pdf.add_page()
 
         # Title
         pdf.set_font("Helvetica","B",22); pdf.set_text_color(30,60,114); pdf.ln(10)
-        pdf.multi_cell(190,12,"GRANT PROPOSAL",align="C")
+        pdf.multi_cell(0,12,"GRANT PROPOSAL",align="C")
         pdf.set_font("Helvetica","B",16); pdf.set_text_color(255,140,0)
-        pdf.multi_cell(190,10,safe(grant.get("programName","CSR Grant")),align="C")
+        pdf.multi_cell(0,10,safe(grant.get("programName","CSR Grant")),align="C")
         pdf.set_font("Helvetica","",12); pdf.set_text_color(80,80,80)
-        pdf.multi_cell(190,8,safe(f"To: {grant.get('corporationName','')} | By: {ngo.get('ngoName','')}"),align="C")
-        pdf.multi_cell(190,8,f"Date: {datetime.now(timezone.utc).strftime('%B %d, %Y')} | PAN: {safe(ngo.get('panCard','N/A'))}",align="C")
+        pdf.multi_cell(0,8,safe(f"To: {grant.get('corporationName','')} | By: {ngo.get('ngoName','')}"),align="C")
+        pdf.multi_cell(0,8,f"Date: {datetime.now(timezone.utc).strftime('%B %d, %Y')} | PAN: {safe(ngo.get('panCard','N/A'))}",align="C")
         pdf.ln(8)
 
         # Sections
@@ -177,23 +177,24 @@ def generate_pdf_bytes(content: dict, grant: dict, ngo: dict) -> bytes:
         budget = content.get("budgetTable",[])
         if budget:
             pdf.set_font("Helvetica","B",9); pdf.set_fill_color(30,60,114); pdf.set_text_color(255,255,255)
-            pdf.cell(55,7,"Category",1,fill=True); pdf.cell(65,7,"Description",1,fill=True)
-            pdf.cell(30,7,"Amount (Rs)",1,fill=True); pdf.cell(0,7,"Justification",1,fill=True,ln=True)
+            # Total width = 170 (since margin is 20: 210 - 40). 35 + 65 + 25 + 45 = 170
+            pdf.cell(35,7,"Category",1,fill=True); pdf.cell(65,7,"Description",1,fill=True)
+            pdf.cell(25,7,"Amount (Rs)",1,fill=True); pdf.cell(0,7,"Justification",1,fill=True,ln=True)
             pdf.set_font("Helvetica","",9); pdf.set_text_color(60,60,60); total=0
             for item in budget:
                 amt = item.get("amount",0); total += amt
-                pdf.cell(55,6,safe(str(item.get("category","")))[:25],1)
-                pdf.cell(65,6,safe(str(item.get("description","")))[:30],1)
-                pdf.cell(30,6,f"{amt:,.0f}",1); pdf.cell(0,6,safe(str(item.get("justification","")))[:28],1,ln=True)
+                pdf.cell(35,6,safe(str(item.get("category","")))[:20],1)
+                pdf.cell(65,6,safe(str(item.get("description","")))[:40],1)
+                pdf.cell(25,6,f"{amt:,.0f}",1); pdf.cell(0,6,safe(str(item.get("justification","")))[:30],1,ln=True)
             pdf.set_font("Helvetica","B",9); pdf.set_fill_color(30,60,114); pdf.set_text_color(255,255,255)
-            pdf.cell(120,7,"TOTAL",1,fill=True); pdf.cell(30,7,f"Rs {total:,.0f}",1,fill=True)
+            pdf.cell(100,7,"TOTAL",1,fill=True); pdf.cell(25,7,f"Rs {total:,.0f}",1,fill=True)
             pdf.cell(0,7,"",1,fill=True,ln=True); pdf.ln(5)
 
         # Impact metrics
         pdf.section(f"{sec_num+1}. Impact Metrics")
         for m in content.get("impactMetrics",[]):
             pdf.set_font("Helvetica","",10); pdf.set_text_color(60,60,60)
-            pdf.multi_cell(190,6,safe(f"* {m.get('metric','')}: {m.get('baseline','')} -> {m.get('target','')} ({m.get('measurementMethod','')})"))
+            pdf.multi_cell(0,6,safe(f"* {m.get('metric','')}: {m.get('baseline','')} -> {m.get('target','')} ({m.get('measurementMethod','')})"))
             pdf.ln(1)
         pdf.ln(3)
 
@@ -202,7 +203,7 @@ def generate_pdf_bytes(content: dict, grant: dict, ngo: dict) -> bytes:
         for p in content.get("timeline",[]):
             pdf.set_font("Helvetica","B",10); pdf.cell(0,7,safe(f"{p.get('phase','')} ({p.get('duration','')})"),ln=True)
             pdf.set_font("Helvetica","",10)
-            for ms in p.get("milestones",[]): pdf.multi_cell(190,6,safe(f"  - {ms}"))
+            for ms in p.get("milestones",[]): pdf.multi_cell(0,6,safe(f"  - {ms}"))
             pdf.ln(2)
 
         # Conclusion + Declaration

@@ -36,9 +36,7 @@ function detectActionLinks(text: string): { label: string; href: string; icon: s
     if (lower.includes("grant") || lower.includes("funding") || lower.includes("csr")) {
         links.push({ label: "View Grants", href: "/grants", icon: "🔍" });
     }
-    if (lower.includes("compliance") || lower.includes("document") || lower.includes("upload") || lower.includes("12a") || lower.includes("80g")) {
-        links.push({ label: "View Compliance", href: "/upload", icon: "⚖️" });
-    }
+    // Removed Compliance action link per user request
     if (lower.includes("report") || lower.includes("impact")) {
         links.push({ label: "View Reports", href: "/reports", icon: "📊" });
     }
@@ -292,7 +290,17 @@ export default function DashboardPage() {
             const stepNum = hasVerify ? '3' : '2';
             const gName = (topGrant.programName || topGrant.grantTitle || "Grant") as string;
             const gCorp = (topGrant.corporationName || topGrant.corporation || "") as string;
-            const gAmt = topGrant.fundingRange ? JSON.stringify(topGrant.fundingRange) : (topGrant.amount || "");
+            let gAmt = topGrant.amount as string || "";
+            if (topGrant.fundingRange && typeof topGrant.fundingRange === 'object') {
+                const range = topGrant.fundingRange as { min?: number, max?: number };
+                if (range.min && range.max) {
+                    gAmt = `₹${range.min.toLocaleString('en-IN')} - ₹${range.max.toLocaleString('en-IN')}`;
+                } else if (range.min) {
+                    gAmt = `₹${range.min.toLocaleString('en-IN')}+`;
+                } else if (range.max) {
+                    gAmt = `Up to ₹${range.max.toLocaleString('en-IN')}`;
+                }
+            }
             response += `### ${stepNum}. Proposal Generation\n${proposalSummary}\n`;
             response += `- **Grant:** ${gName}\n- **Corporation:** ${gCorp}\n`;
             if (gAmt) response += `- **Funding:** ${gAmt}\n`;

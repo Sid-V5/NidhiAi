@@ -9,7 +9,6 @@ const navItems = [
     { href: "/dashboard", icon: "📊", label: "Dashboard" },
     { href: "/profile", icon: "🏢", label: "NGO Profile" },
     { href: "/upload", icon: "📤", label: "Upload Documents" },
-    { href: "/compliance", icon: "⚖️", label: "Compliance" },
     { href: "/grants", icon: "🔍", label: "Find Grants" },
     { href: "/proposals", icon: "📄", label: "Proposals" },
     { href: "/reports", icon: "📈", label: "Impact Reports" },

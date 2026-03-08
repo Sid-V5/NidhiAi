@@ -185,10 +185,10 @@ export default function UploadPage() {
                             <div key={i} style={{
                                 display: "flex", alignItems: "center", gap: 16, padding: "12px 16px",
                                 borderRadius: 4, background: "var(--bg-primary)",
-                                borderLeft: `3px solid ${doc.status === "complete" && doc.result?.status === "valid" ? "var(--green)" : doc.status === "complete" && doc.result?.status === "expired" ? "var(--red)" : doc.status === "error" ? "var(--red)" : doc.status === "scanning" ? "#D97706" : "var(--blue)"}`,
+                                borderLeft: `3px solid ${doc.status === "complete" && (doc.result?.status === "valid" || doc.result?.status === "processed") ? "var(--green)" : doc.status === "complete" && doc.result?.status === "expired" ? "var(--red)" : doc.status === "error" ? "var(--red)" : doc.status === "scanning" ? "#D97706" : "var(--blue)"}`,
                             }}>
                                 <div style={{ fontSize: 20 }}>
-                                    {doc.status === "uploading" ? "⬆️" : doc.status === "scanning" ? "🔍" : doc.status === "error" ? "❌" : doc.result?.status === "valid" ? "✅" : "⚠️"}
+                                    {doc.status === "uploading" ? "⬆️" : doc.status === "scanning" ? "🔍" : doc.status === "error" ? "❌" : (doc.result?.status === "valid" || doc.result?.status === "processed") ? "✅" : "⚠️"}
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{doc.name} <span style={{ fontSize: 11, color: "var(--accent)", marginLeft: 6 }}>{doc.type}</span></div>
@@ -198,7 +198,7 @@ export default function UploadPage() {
                                                 doc.result?.detail}
                                     </div>
                                 </div>
-                                <span className={`badge ${doc.status === "complete" ? (doc.result?.status === "valid" ? "badge-valid" : "badge-expired") : doc.status === "error" ? "badge-expired" : doc.status === "scanning" ? "badge-processing" : "badge-pending"}`}>
+                                <span className={`badge ${doc.status === "complete" ? ((doc.result?.status === "valid" || doc.result?.status === "processed") ? "badge-valid" : "badge-expired") : doc.status === "error" ? "badge-expired" : doc.status === "scanning" ? "badge-processing" : "badge-pending"}`}>
                                     {doc.status === "complete" ? (doc.result?.status || "DONE").toUpperCase() : doc.status === "error" ? "ERROR" : doc.status === "scanning" ? "SCANNING" : "UPLOADING"}
                                 </span>
                             </div>

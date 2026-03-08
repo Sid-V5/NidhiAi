@@ -342,7 +342,7 @@ def handle_report_generate(body: dict) -> dict:
             {"name": "reportingPeriod", "value": body.get("quarter", "")},
             {"name": "sector", "value": activity.get("sector", "")},
             {"name": "beneficiariesServed", "value": str(activity.get("beneficiariesServed", 0))},
-            {"name": "programsCompleted", "value": str(activity.get("proposalsGenerated", 0))},
+            {"name": "programsCompleted", "value": str(activity.get("programsCompleted", activity.get("proposalsGenerated", 0)))},
             {"name": "fundsUtilized", "value": str(activity.get("fundsUtilized", 0))},
             {"name": "geographicReach", "value": activity.get("geographicReach", "")},
         ]}}},

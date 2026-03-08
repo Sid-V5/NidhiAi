@@ -46,6 +46,9 @@ export default function ReportsPage() {
     const [traceStartTime, setTraceStartTime] = useState(0);
 
     const [quarter, setQuarter] = useState("Q4-2025");
+    const [beneficiaries, setBeneficiaries] = useState("1250");
+    const [funds, setFunds] = useState("1500000");
+    const [programs, setPrograms] = useState("4");
     const quarters = ["Q1-2025", "Q2-2025", "Q3-2025", "Q4-2025", "Q1-2026"];
 
     useEffect(() => {
@@ -97,17 +100,13 @@ export default function ReportsPage() {
         const totalDocs = (compData.totalDocuments as number) || 0;
         const proposalsCount = propData.proposals?.length || 0;
 
-        // Derive deterministic, realistic report statistics from platform usage history
-        const totalBudget = (propData.proposals || []).reduce((sum: number, p: any) => sum + (Number(p.budget) || 0), 0);
-        const fundsUtilized = totalBudget > 0 ? Math.round(totalBudget * 0.85) : (proposalsCount > 0 ? proposalsCount * 250000 : 0);
-        const beneficiariesServed = proposalsCount > 0 ? proposalsCount * 350 : 0;
-
         const activityData = {
             ngoName: session.ngoName, ngoId: session.ngoId, quarter,
             complianceStatus: { validDocuments: validDocs, totalDocuments: totalDocs, complianceScore: totalDocs > 0 ? Math.round((validDocs / totalDocs) * 100) : 0 },
             proposalsGenerated: proposalsCount, grantsApplied: proposalsCount,
-            programsCompleted: proposalsCount,
-            fundsUtilized, beneficiariesServed,
+            programsCompleted: Number(programs) || proposalsCount,
+            fundsUtilized: Number(funds) || 0,
+            beneficiariesServed: Number(beneficiaries) || 0,
             geographicReach: "Regional"
         };
 
@@ -204,25 +203,69 @@ export default function ReportsPage() {
 
             {/* LEFT — Controls + Thinking Trace */}
             <div style={{ borderRight: "1px solid var(--border)", padding: "28px 20px", display: "flex", flexDirection: "column", gap: "16px", background: "var(--bg-secondary)", overflowY: "auto" }}>
-                <div>
+                <div style={{ padding: "28px 24px 16px" }}>
                     <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 4 }}>Impact Reports</h1>
                     <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>AI-generated quarterly reports.</p>
                 </div>
 
-                <div>
-                    <label style={{ display: "block", fontSize: 11, color: "var(--text-muted)", marginBottom: 5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Reporting Period</label>
-                    <select value={quarter} onChange={e => setQuarter(e.target.value)} className="input-field" style={{ fontSize: 13 }}>
-                        {quarters.map(q => <option key={q} value={q}>{q}</option>)}
-                    </select>
-                </div>
+                <div style={{ padding: "0 24px 20px" }}>
+                    <div style={{ marginBottom: 16 }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--text-muted)", marginBottom: 8 }}>REPORTING PERIOD</label>
+                        <select value={quarter} onChange={e => setQuarter(e.target.value)} disabled={loading}
+                            style={{
+                                width: "100%", padding: "10px 12px", background: "var(--bg-card)", border: "1px solid var(--border)",
+                                borderRadius: 6, color: "var(--text-primary)", fontSize: 14, outline: "none"
+                            }}>
+                            {quarters.map(q => <option key={q} value={q}>{q}</option>)}
+                        </select>
+                    </div>
 
-                <button onClick={handleGenerate} disabled={loading || isStreaming} className="btn-primary" style={{ width: "100%", fontSize: 13 }}>
-                    {loading ? "⚡ Collecting data..." : isStreaming ? "📝 Writing..." : "📈 Generate Report"}
-                </button>
+                    <div style={{ marginBottom: 16 }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--text-muted)", marginBottom: 8 }}>BENEFICIARIES SERVED</label>
+                        <input value={beneficiaries} onChange={e => setBeneficiaries(e.target.value)} disabled={loading}
+                            type="number"
+                            placeholder="e.g. 1250"
+                            style={{
+                                width: "100%", padding: "10px 12px", background: "var(--bg-card)", border: "1px solid var(--border)",
+                                borderRadius: 6, color: "var(--text-primary)", fontSize: 14, outline: "none"
+                            }} />
+                    </div>
+
+                    <div style={{ marginBottom: 16 }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--text-muted)", marginBottom: 8 }}>FUNDS UTILIZED (INR)</label>
+                        <input value={funds} onChange={e => setFunds(e.target.value)} disabled={loading}
+                            type="number"
+                            placeholder="e.g. 1500000"
+                            style={{
+                                width: "100%", padding: "10px 12px", background: "var(--bg-card)", border: "1px solid var(--border)",
+                                borderRadius: 6, color: "var(--text-primary)", fontSize: 14, outline: "none"
+                            }} />
+                    </div>
+
+                    <div style={{ marginBottom: 20 }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--text-muted)", marginBottom: 8 }}>PROGRAMS COMPLETED</label>
+                        <input value={programs} onChange={e => setPrograms(e.target.value)} disabled={loading}
+                            type="number"
+                            placeholder="e.g. 4"
+                            style={{
+                                width: "100%", padding: "10px 12px", background: "var(--bg-card)", border: "1px solid var(--border)",
+                                borderRadius: 6, color: "var(--text-primary)", fontSize: 14, outline: "none"
+                            }} />
+                    </div>
+
+                    <button
+                        onClick={handleGenerate}
+                        disabled={loading || !grantsDone}
+                        className={`btn-primary ${loading ? "pulse" : ""}`}
+                        style={{ width: "100%", padding: "12px", fontSize: 14, fontWeight: 600, display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}
+                    >
+                        {loading ? (<><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> Generating...</>) : (<>📈 Generate Report</>)}
+                    </button>
+                </div>
 
                 {/* THINKING TRACE */}
                 {traceSteps.length > 0 && (
-                    <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+                    <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12, padding: "12px 24px" }}>
                         <div onClick={() => setTraceOpen(!traceOpen)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8, marginBottom: traceOpen ? 10 : 0 }}>
                             <span style={{ fontSize: 11, color: "var(--text-muted)", transform: traceOpen ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s", display: "inline-block" }}>▶</span>
                             <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px" }}>Thinking</span>
@@ -309,25 +352,11 @@ export default function ReportsPage() {
 
             {/* RIGHT — A4 Document Canvas */}
             <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "32px 24px", overflowY: "auto", background: "var(--bg-primary)", flexDirection: "column" }}>
-                {!grantsDone && (
-                    <div style={{
-                        width: "100%", padding: "20px 24px", borderRadius: 8,
-                        background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)",
-                        display: "flex", alignItems: "center", gap: 16, marginBottom: 24,
-                    }}>
-                        <span style={{ fontSize: 24 }}>🔒</span>
-                        <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: "#D97706" }}>Complete Grant Discovery First</div>
-                            <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 2 }}>Find grants and generate a proposal before generating impact reports.</div>
-                        </div>
-                        <a href="/grants" className="btn-primary" style={{ fontSize: 12, padding: "8px 16px", textDecoration: "none", whiteSpace: "nowrap" }}>Find Grants →</a>
-                    </div>
-                )}
 
                 {!streamedText && !isStreaming && !loading ? (
                     <div style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "15vh", opacity: 0.4 }}>
                         <div style={{ fontSize: "3rem", marginBottom: "16px", fontFamily: "var(--font-playfair)" }}>📊</div>
-                        <div style={{ fontSize: 15, fontFamily: "var(--font-space-mono)" }}>Select a quarter and click<br /><strong>Generate Report</strong> to begin.</div>
+                        <div style={{ fontSize: 15, fontFamily: "var(--font-space-mono)" }}>Fill in your impact data and click<br /><strong>Generate Report</strong> to begin.</div>
                     </div>
                 ) : (
                     <div className="a4-canvas">
@@ -347,7 +376,7 @@ export default function ReportsPage() {
                         {loading && !streamedText && (
                             <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#64748B", padding: "20px 0" }}>
                                 <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                                <span style={{ fontSize: 13 }}>Waiting for model response...</span>
+                                <span style={{ fontSize: 13 }}>Generating impact report via Bedrock...</span>
                             </div>
                         )}
                         <div>{renderMarkdownText(streamedText)}</div>
@@ -358,7 +387,7 @@ export default function ReportsPage() {
                             <div style={{ marginTop: 40, paddingTop: 20, borderTop: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                 <div style={{ fontSize: 10, color: "#94A3B8", fontFamily: "var(--font-space-mono)" }}>Generated by NidhiAI Impact Agent</div>
                                 {downloadUrl && (
-                                    <a href={downloadUrl} target="_blank" className="download-glow" style={{
+                                    <a href={downloadUrl} target="_blank" style={{
                                         padding: "8px 20px", background: "#1E3C72", color: "#fff", borderRadius: "4px",
                                         fontSize: 12, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
                                     }}>📥 Download PDF</a>

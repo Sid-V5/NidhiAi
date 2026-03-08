@@ -14,9 +14,11 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 bedrock_runtime = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "ap-south-1"))
-s3_client = boto3.client("s3", region_name=os.environ.get("AWS_REGION", "ap-south-1"),
+_region = os.environ.get("AWS_REGION", "ap-south-1")
+s3_client = boto3.client("s3", region_name=_region,
+                         endpoint_url=f"https://s3.{_region}.amazonaws.com",
                          config=Config(signature_version="s3v4"))
-dynamodb = boto3.resource("dynamodb", region_name=os.environ.get("AWS_REGION", "ap-south-1"))
+dynamodb = boto3.resource("dynamodb", region_name=_region)
 
 PROPOSALS_BUCKET = os.environ.get("PROPOSALS_BUCKET", "nidhiai-generated-pdfs")
 PROPOSALS_TABLE = os.environ.get("DYNAMODB_PROPOSALS_TABLE", "nidhiai-proposals")

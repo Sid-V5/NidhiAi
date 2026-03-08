@@ -280,10 +280,10 @@ export default function DashboardPage() {
     };
 
     return (
-        <div>
-            <div className="page-header">
-                <h1>Dashboard</h1>
-                <p>Welcome back, {session.ngoName || "Setup your profile"}. Here is your funding overview.</p>
+        <div style={{ paddingBottom: 40 }}>
+            <div className="page-header" style={{ marginBottom: 24, paddingBottom: 12 }}>
+                <h1 style={{ fontSize: 28 }}>Dashboard</h1>
+                <p style={{ fontSize: 14, marginTop: 4 }}>Welcome back, {session.ngoName || "Setup your profile"}. Here is your funding overview.</p>
             </div>
 
             {/* Command Bar */}
@@ -382,72 +382,73 @@ export default function DashboardPage() {
 
             {/* Sample prompts (only shown before first message) */}
             {messages.length === 0 && !agentRunning && (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 28 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 24 }}>
                     {[
+                        { icon: "🚀", text: "Full Automation — verify, match & draft", prompt: "Verify all my compliance documents, find the best matching CSR grants for my NGO, and generate a proposal for the top match" },
                         { icon: "⚖️", text: "Check my compliance status", prompt: "Check my compliance status and verify all uploaded documents" },
                         { icon: "🔍", text: "Find grants for my sector", prompt: `Find CSR grants matching my NGO's profile` },
                         { icon: "📝", text: "Draft a proposal", prompt: "Generate a grant proposal for the best matching CSR opportunity" },
                     ].map(s => (
                         <button key={s.text} onClick={() => { setPrompt(s.prompt); }}
-                            className="corporate-card" style={{ textAlign: "left", cursor: "pointer", border: "1px solid var(--border)", padding: "14px 16px", fontSize: 13, background: "var(--bg-card)" }}>
-                            <span style={{ fontSize: 18 }}>{s.icon}</span>
-                            <div style={{ marginTop: 6, color: "var(--text-secondary)" }}>{s.text}</div>
+                            className="corporate-card" style={{ textAlign: "left", cursor: "pointer", border: "1px solid var(--border)", padding: "12px 16px", fontSize: 13, background: "var(--bg-card)" }}>
+                            <span style={{ fontSize: 16 }}>{s.icon}</span>
+                            <div style={{ marginTop: 4, color: "var(--text-secondary)", fontSize: 12 }}>{s.text}</div>
                         </button>
                     ))}
                 </div>
             )}
 
             {/* Stat Cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, marginBottom: 32 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
                 {[
-                    { icon: "⚖️", value: stats.docs, label: "Documents Verified", href: "/upload" },
+                    { icon: "⚖️", value: stats.docs, label: "Docs Verified", href: "/upload" },
                     { icon: "🔍", value: stats.grants, label: "Grants Matched", href: "/grants" },
-                    { icon: "📝", value: stats.proposals, label: "Proposals Generated", href: "/proposals" },
-                    { icon: "📊", value: stats.score, label: "Compliance Score", href: "/upload" },
+                    { icon: "📝", value: stats.proposals, label: "Proposals", href: "/proposals" },
+                    { icon: "📊", value: stats.score, label: "Compliance", href: "/upload" },
                 ].map((s) => (
-                    <a key={s.label} href={s.href} className="corporate-card" style={{ textDecoration: "none", cursor: "pointer" }}>
+                    <a key={s.label} href={s.href} className="corporate-card" style={{ textDecoration: "none", cursor: "pointer", padding: "16px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontSize: 24 }}>{s.icon}</span>
-                            {loading ? <div className="spinner" style={{ width: 16, height: 16 }} /> : null}
+                            <span style={{ fontSize: 20 }}>{s.icon}</span>
+                            {loading ? <div className="spinner" style={{ width: 14, height: 14 }} /> : null}
                         </div>
-                        <div style={{ marginTop: 16, fontSize: 32, fontWeight: 700, fontFamily: "var(--font-space-mono)", color: "var(--text-primary)" }}>{s.value}</div>
-                        <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>{s.label}</div>
+                        <div style={{ marginTop: 12, fontSize: 28, fontWeight: 700, fontFamily: "var(--font-space-mono)", color: "var(--text-primary)" }}>{s.value}</div>
+                        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{s.label}</div>
                     </a>
                 ))}
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24 }}>
-                {/* Compliance Overview — from COMPLIANCE_TABLE, not profile */}
-                <div className="corporate-card">
-                    <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Compliance Status</h3>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                {/* Compliance Overview — from COMPLIANCE_TABLE */}
+                <div className="corporate-card" style={{ padding: 16 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Compliance Status</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {[
                             { key: "12A", label: "12A Certificate" },
                             { key: "80G", label: "80G Certificate" },
                             { key: "CSR1", label: "CSR-1 Certificate" },
                         ].map(c => (
-                            <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderRadius: 6, background: "var(--bg-primary)", border: "1px solid var(--border)" }}>
-                                <span style={{ fontSize: 13, fontWeight: 500 }}>{c.label}</span>
+                            <div key={c.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 6, background: "var(--bg-primary)", border: "1px solid var(--border)" }}>
+                                <span style={{ fontSize: 12, fontWeight: 500 }}>{c.label}</span>
                                 {statusBadge(getDocStatus(c.key))}
                             </div>
                         ))}
                     </div>
                     {complianceResults.length === 0 && !loading && (
-                        <div style={{ marginTop: 12, fontSize: 12, color: "var(--text-muted)" }}>
-                            No documents scanned yet. <a href="/upload" style={{ color: "var(--accent)" }}>Upload documents</a> to begin.
+                        <div style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
+                            No documents scanned. <a href="/upload" style={{ color: "var(--accent)" }}>Upload</a> to begin.
                         </div>
                     )}
                 </div>
 
                 {/* Quick Actions */}
-                <div className="corporate-card">
-                    <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Quick Actions</h3>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        <a href="/upload" className="btn-secondary" style={{ fontSize: 13, textAlign: "center" }}>📤 Upload Documents</a>
-                        <a href="/grants" className="btn-secondary" style={{ fontSize: 13, textAlign: "center" }}>🔍 Find Grants</a>
-                        <a href="/proposals" className="btn-secondary" style={{ fontSize: 13, textAlign: "center" }}>📝 Generate Proposal</a>
-                        <a href="/reports" className="btn-secondary" style={{ fontSize: 13, textAlign: "center" }}>📈 Generate Report</a>
-                        <a href="/chatbot" className="btn-secondary" style={{ fontSize: 13, textAlign: "center" }}>💬 Ask about CSR</a>
+                <div className="corporate-card" style={{ padding: 16 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Quick Actions</h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                        <a href="/upload" className="btn-secondary" style={{ fontSize: 12, textAlign: "center", padding: "8px 6px" }}>📤 Upload</a>
+                        <a href="/grants" className="btn-secondary" style={{ fontSize: 12, textAlign: "center", padding: "8px 6px" }}>🔍 Grants</a>
+                        <a href="/proposals" className="btn-secondary" style={{ fontSize: 12, textAlign: "center", padding: "8px 6px" }}>📝 Proposals</a>
+                        <a href="/reports" className="btn-secondary" style={{ fontSize: 12, textAlign: "center", padding: "8px 6px" }}>📈 Reports</a>
+                        <a href="/chatbot" className="btn-secondary" style={{ fontSize: 12, textAlign: "center", padding: "8px 6px", gridColumn: "span 2" }}>💬 CSR Assistant</a>
                     </div>
                 </div>
             </div>

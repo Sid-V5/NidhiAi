@@ -1,0 +1,2 @@
+[    8996ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://flhwtp0q9e.execute-api.ap-south-1.amazonaws.com/prod/profile?ngoId=demo-ngo-001:0
+[   65475ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://flhwtp0q9e.execute-api.ap-south-1.amazonaws.com/prod/profile?ngoId=demo-ngo-001:0

@@ -1,0 +1,10 @@
+﻿/var/task/fpdf/fpdf.py:56: UserWarning: Pillow could not be imported - fpdf2 will not be able to add any image
+---
+[ERROR]	2026-03-05T12:53:40.838Z	b4763e94-f6e9-4c86-80a4-fe75e3aa5df6	Failed: Not enough horizontal space to render a single character
+Traceback (most recent call last):
+  File "/var/task/handler.py", line 205, in lambda_handler
+    pdf_bytes = generate_report_pdf(report, ngo_name, period, beneficiaries, funds_utilized)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/task/handler.py", line 100, in generate_report_pdf
+    pdf.multi_cell(0,
+---

@@ -1,0 +1,40 @@
+﻿
+============================================================
+PROMPT: What grants are available for education NGOs in Jharkhand?
+============================================================
+  [Rationale] The user is asking about grants specifically for education NGOs in Jharkhand. This is a clear request to find matching CSR funding opportunities.
+(2) 
+  [FAILURE] Function in Lambda response doesn't match input. Check that the APIPath in the input and response match and retry the request.
+  EXCEPTION: An error occurred (dependencyFailedException) when calling the InvokeAgent operation: Function in Lambda response doesn't match input. Check that the APIPath in the input and response match and retry 
+
+============================================================
+PROMPT: Generate an impact report for Q4 2025
+============================================================
+  [Rationale] The user wants to generate an impact report for Q4 2025. This falls under the Impact-Agent's responsibilities.
+(2) I need the NGO's name and ID from t
+  [Route -> Impact-Agent]
+  [Rationale] The User wants me to generate an impact report for Q4 2025 using NGO context from the session. 
+(2) However, I don't have any session context or data 
+  [Response from Impact-Agent] Sorry I cannot answer.
+  [Rationale] The previous attempt to send to Impact-Agent directly failed with "Sorry I cannot answer." This suggests I need to follow the proper protocol.
+
+(2) Lo
+  [FAILURE] Function in Lambda response doesn't match input. Check that the APIPath in the input and response match and retry the request.
+  EXCEPTION: An error occurred (dependencyFailedException) when calling the InvokeAgent operation: Function in Lambda response doesn't match input. Check that the APIPath in the input and response match and retry 
+
+============================================================
+PROMPT: What is CSR section 135?
+============================================================
+  [Rationale] The user is asking about "CSR section 135", which appears to be a legal or regulatory reference related to Corporate Social Responsibility in India. T
+  RESULT: PASS
+  Response: This system is designed for NGO-CSR funding workflows and cannot provide legal interpretations of CSR regulations like Section 135. For authoritative guidance on Section 135 of the Companies Act, 2013
+
+============================================================
+PROMPT: Hello, what can you help me with?
+============================================================
+  [Rationale] The user is asking what services I can provide. I should respond with a concise overview of my capabilities as the NidhiAI Supervisor for Indian NGOs 
+  RESULT: PASS
+  Response: IÆm NidhiAI Supervisor, your orchestrator for Indian NGOs seeking CSR funding. I can help you with:
+
+- **Document verification** (12A, 80G, CSR-1, FCRA, PAN)
+- **Grant matching** û finding relevant CS

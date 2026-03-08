@@ -1,0 +1,14 @@
+INIT_START Runtime Version: python:3.12.mainlinev2.v3	Runtime Version ARN: arn:aws:lambda:ap-south-1::runtime:27990c3d0965bea97240f3380b8d623b692705303bbde4c31fb02fa7daa05453
+
+[INFO]	2026-03-06T18:21:13.750Z		Found credentials in environment variables.
+
+START RequestId: 33cc0807-f576-473e-9b53-e0c1c4ab1672 Version: $LATEST
+
+[INFO]	2026-03-06T18:21:13.977Z	33cc0807-f576-473e-9b53-e0c1c4ab1672	Event: {"messageVersion": "1.0", "function": "scanDocumentsBatch", "parameters": [{"name": "documents", "type": "string", "value": "[{\"s3Bucket\": \"nidhiai-documents\", \"s3Key\": \"demo-ngo-001/compliance/12A_cert.pdf\", \"documentType\": \"12A\"}, {\"s3Bucket\": \"nidhiai-documents\", \"s3Key\": \"demo-ngo-001/compliance/80G_cert.pdf\", \"documentType\": \"80G\"}, {\"s3Bucket\": \"nidhiai-documents\", \"s3Key\": \"demo-ngo-001/compliance/CSR1_cert.pdf\", \"documentType\": \"CSR1\"}]"}, {"name": "ngoId", "type": "string", "value": "demo-ngo-001"}], "inputText": "NGO: \"Asha Foundation\" (ID: demo-ngo-001)\nS3 Bucket: nidhiai-documents\nDocuments: [{\"s3Bucket\":\"nidhiai-documents\",\"s3Key\":\"demo-ngo-001/compliance/12A_cert.pdf\",\"documentType\":\"12A\"},{\"s3Bucket\":\"nidhiai-documents\",\"s3Key\":\"demo-ngo-001/compliance/80G_cert.pdf\",\"documentType\":\"80G\"},{\"s3Bucket\":\"nidhiai-documents\",\"s3Key\":\"demo-ngo-001/compliance/CSR1_cert.pdf\",\"documentType\":\"CSR1\"}]\nSector: Education | Location: India\nRequest: Check my compliance status, find matching grants, and draft a proposal", "sessionId": "35fc605b-441f-4514-8d7b-5981dc38090d", "agent": {"name": "Supervisor-Agent", "version": "DRAFT", "id": "HB82HPMIA3", "alias": "TSTALIASID"}, "actionGroup": "scan_documents", "sessionAttributes": {}, "promptSessionAttributes": {}}
+
+[INFO]	2026-03-06T18:21:13.977Z	33cc0807-f576-473e-9b53-e0c1c4ab1672	PARALLEL BATCH SCAN: 3 documents for NGO demo-ngo-001
+
+END RequestId: 33cc0807-f576-473e-9b53-e0c1c4ab1672
+
+REPORT RequestId: 33cc0807-f576-473e-9b53-e0c1c4ab1672	Duration: 419.99 ms	Billed Duration: 958 ms	Memory Size: 256 MB	Max Memory Used: 100 MB	Init Duration: 537.89 ms	
+

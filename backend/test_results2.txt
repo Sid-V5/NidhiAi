@@ -1,0 +1,33 @@
+﻿
+============================================================
+TEST: Check my compliance status and verify all uploaded documents
+============================================================
+STATUS: SUCCESS
+AGENTS CALLED: scan_documents
+RESPONSE (833 chars): I attempted to verify your compliance documents, but encountered an issue accessing your 12A certificate file. The system reported: "Unable to get object metadata from S3. Check object key, region and/or access permissions."
+
+This means either:
+- The document isn't in the exact location specified (ngo-43aaf34/compliance/12A_cert.pdf)
+- There are permission issues preventing access to the file
+- Th
+
+============================================================
+TEST: Find CSR grants matching my NGO's profile
+============================================================
+STATUS: SUCCESS
+AGENTS CALLED: match_grants
+ERROR: 'charmap' codec can't encode character '\u20b9' in position 305: character maps to <undefined>
+
+============================================================
+TEST: Verify my docs and find grants for education in India
+============================================================
+STATUS: SUCCESS
+AGENTS CALLED: scan_documents, match_grants
+RESPONSE (1361 chars): Document verification encountered an issue, but I successfully found potential CSR grants for your education work in India.
+
+Document Verification Issue:
+- The 12A certificate scan failed due to an S3 access error: "Unable to get object metadata from S3. Check object key, region and/or access permissions."
+- This means we couldn't verify your 12A status. Please ensure the document exists at: ngo-4
+
+
+Done!

@@ -1,0 +1,32 @@
+﻿
+============================================================
+TEST: Check my compliance status and verify all uploaded documents
+============================================================
+STATUS: SUCCESS
+AGENTS CALLED: scan_documents
+RESPONSE (846 chars): I attempted to verify your 12A certificate but encountered an S3 access error. The system couldn't retrieve the document from nidhiai-documents/ngo-43aaf34/compliance/12A_cert.pdf.
+
+This usually means one of three things:
+1. The file might not exist at that exact path
+2. There could be permission issues accessing the S3 object
+3. The file might be corrupted or encrypted
+
+Since we couldn't verify y
+
+============================================================
+TEST: Find CSR grants matching my NGO's profile
+============================================================
+STATUS: SUCCESS
+AGENTS CALLED: match_grants
+ERROR: 'charmap' codec can't encode character '\u20b9' in position 195: character maps to <undefined>
+
+============================================================
+TEST: Verify my docs and find grants for education in India
+============================================================
+STATUS: NEEDS_IMPROVEMENT
+AGENTS CALLED: scan_documents
+FAILURE: LLM prediction format incorrect. The response was - {"output":{"message":{"role":"assistant","content":[{"text":" The scan_documents__scanDocumentsBatch tool returned an error for the12A certificate: 
+RESPONSE (51 chars): Sorry, I am unable to assist you with this request.
+
+
+Done!

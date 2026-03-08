@@ -1,0 +1,35 @@
+﻿
+============================================================
+PROMPT: What grants are available for education NGOs in Jharkhand?
+============================================================
+  [Rationale] The user is asking about grants for education NGOs in Jharkhand. This is a clear request to find CSR funding opportunities.
+(2) I need to use the Gran
+  [FAILURE] Function in Lambda response doesn't match input. Check that the APIPath in the input and response match and retry the request.
+  EXCEPTION: An error occurred (dependencyFailedException) when calling the InvokeAgent operation: Function in Lambda response doesn't match input. Check that the APIPath in the input and response match and retry 
+
+============================================================
+PROMPT: Generate an impact report for Q4 2025
+============================================================
+  [Rationale] The user wants me to generate an impact report for Q4 2025.
+(2) The user has provided the time period (Q4 2025) but no actual project data or details.
+  RESULT: PASS
+  Response: Sorry I cannot answer.
+
+============================================================
+PROMPT: What is CSR section 135?
+============================================================
+  [Rationale] The user is asking about "CSR section 135" which appears to be a legal reference to Corporate Social Responsibility provisions under Indian law. This 
+  RESULT: PASS
+  Response: Section 135 of the Companies Act, 2013 is the key legislation that mandates Corporate Social Responsibility (CSR) spending for certain companies in India. Here's what you need to know:
+
+**Core Require
+
+============================================================
+PROMPT: Hello, what can you help me with?
+============================================================
+  [Rationale] The user is asking what services I can provide. I should introduce my role as the NidhiAI Supervisor for Indian NGOs seeking CSR funding and list the 
+  RESULT: PASS
+  Response: I am the NidhiAI Supervisor, your dedicated assistant for Indian NGOs seeking CSR funding. I can help you with:
+
+- Finding matching CSR grants and corporate funding opportunities
+- Drafting profession

@@ -1,0 +1,35 @@
+INIT_START Runtime Version: python:3.12.mainlinev2.v3	Runtime Version ARN: arn:aws:lambda:ap-south-1::runtime:27990c3d0965bea97240f3380b8d623b692705303bbde4c31fb02fa7daa05453
+
+[INFO]	2026-03-05T12:53:27.494Z		Found credentials in environment variables.
+
+START RequestId: b4763e94-f6e9-4c86-80a4-fe75e3aa5df6 Version: $LATEST
+
+[INFO]	2026-03-05T12:53:27.693Z	b4763e94-f6e9-4c86-80a4-fe75e3aa5df6	Event: {"actionGroup": "generate_report", "apiPath": "/generate-report", "requestBody": {"content": {"application/json": {"properties": [{"name": "ngoId", "value": "demo-ngo-001"}, {"name": "ngoName", "value": "Asha Foundation"}, {"name": "reportingPeriod", "value": "Q4-2025"}, {"name": "sector", "value": "Education"}, {"name": "beneficiariesServed", "value": "500"}, {"name": "programsCompleted", "value": "3"}, {"name": "fundsUtilized", "value": "300000"}, {"name": "geographicReach", "value": "3 districts"}]}}}}
+
+/var/task/fpdf/fpdf.py:56: UserWarning: Pillow could not be imported - fpdf2 will not be able to add any image
+
+warnings.warn(
+
+[ERROR]	2026-03-05T12:53:40.838Z	b4763e94-f6e9-4c86-80a4-fe75e3aa5df6	Failed: Not enough horizontal space to render a single character
+Traceback (most recent call last):
+  File "/var/task/handler.py", line 205, in lambda_handler
+    pdf_bytes = generate_report_pdf(report, ngo_name, period, beneficiaries, funds_utilized)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/task/handler.py", line 100, in generate_report_pdf
+    pdf.multi_cell(0,10,period,align="C")
+  File "/var/task/fpdf/fpdf.py", line 281, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/var/task/fpdf/deprecation.py", line 36, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/var/task/fpdf/fpdf.py", line 4916, in multi_cell
+    text_line = multi_line_break.get_line()
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/task/fpdf/line_break.py", line 851, in get_line
+    raise FPDFException(
+fpdf.errors.FPDFException: Not enough horizontal space to render a single character
+END RequestId: b4763e94-f6e9-4c86-80a4-fe75e3aa5df6
+
+REPORT RequestId: b4763e94-f6e9-4c86-80a4-fe75e3aa5df6	Duration: 13166.15 ms	Billed Duration: 13625 ms	Memory Size: 256 MB	Max Memory Used: 138 MB	Init Duration: 458.45 ms	
+

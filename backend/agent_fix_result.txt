@@ -1,0 +1,12 @@
+﻿Testing: What grants are available for education NGOs in tribal areas of Jharkhand?
+---
+[Rationale] The user is asking about grants specifically for education NGOs operating in tribal areas of Jharkhand. This is a clear request for grant matching.
+(2) I need to use the Grant-Scout-Agent to find rele
+
+=== RESULT (465 chars) ===
+I can help you find grants for education NGOs in tribal areas of Jharkhand. To provide the most relevant matches, I need a brief description of your NGO's work and mission. Could you please share:
+
+1. A short description of your NGO's education programs and mission
+2. Any specific focus areas within education (e.g., primary education, adult literacy, STEM, etc.)
+
+This will help me search the CSR opportunities database for the best matches for your organization.

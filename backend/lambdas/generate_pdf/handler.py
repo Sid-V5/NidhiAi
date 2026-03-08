@@ -7,13 +7,15 @@ import json, logging, os, time, uuid
 from datetime import datetime, timezone
 from typing import Any
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 bedrock_runtime = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "ap-south-1"))
-s3_client = boto3.client("s3", region_name=os.environ.get("AWS_REGION", "ap-south-1"))
+s3_client = boto3.client("s3", region_name=os.environ.get("AWS_REGION", "ap-south-1"),
+                         config=Config(signature_version="s3v4"))
 dynamodb = boto3.resource("dynamodb", region_name=os.environ.get("AWS_REGION", "ap-south-1"))
 
 PROPOSALS_BUCKET = os.environ.get("PROPOSALS_BUCKET", "nidhiai-generated-pdfs")

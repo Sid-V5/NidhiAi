@@ -7,13 +7,15 @@ import json, logging, os, time, uuid
 from datetime import datetime, timezone
 from typing import Any
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 bedrock_runtime = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "ap-south-1"))
-s3_client = boto3.client("s3", region_name=os.environ.get("AWS_REGION", "ap-south-1"))
+s3_client = boto3.client("s3", region_name=os.environ.get("AWS_REGION", "ap-south-1"),
+                         config=Config(signature_version="s3v4"))
 dynamodb = boto3.resource("dynamodb", region_name=os.environ.get("AWS_REGION", "ap-south-1"))
 
 REPORTS_BUCKET = os.environ.get("REPORTS_BUCKET", "nidhiai-generated-pdfs")
@@ -219,7 +221,12 @@ Return JSON:
         s3_key = f"{ngo_id}/reports/{period.replace(' ','_')}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.pdf"
 
         s3_client.put_object(Bucket=REPORTS_BUCKET, Key=s3_key, Body=pdf_bytes, ContentType="application/pdf")
-        download_url = s3_client.generate_presigned_url("get_object", Params={"Bucket":REPORTS_BUCKET,"Key":s3_key}, ExpiresIn=300)
+        download_url = s3_client.generate_presigned_url("get_object", Params={
+            "Bucket": REPORTS_BUCKET,
+            "Key": s3_key,
+            "ResponseContentType": "application/pdf",
+            "ResponseContentDisposition": "inline",
+        }, ExpiresIn=3600)
 
         summary = (f"Impact report generated for {ngo_name} ({period}). "
                    f"{beneficiaries} beneficiaries served, Rs {funds_utilized:,} utilized across {programs} programs.")

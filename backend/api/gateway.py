@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Any
 from decimal import Decimal
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
 
@@ -16,7 +17,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 REGION = os.environ.get("AWS_REGION", "ap-south-1")
-s3 = boto3.client("s3", region_name=REGION)
+s3 = boto3.client("s3", region_name=REGION, config=Config(signature_version="s3v4"))
 dynamodb = boto3.resource("dynamodb", region_name=REGION)
 lambda_client = boto3.client("lambda", region_name=REGION)
 bedrock_agent_rt = boto3.client("bedrock-agent-runtime", region_name=REGION)

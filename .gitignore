@@ -70,6 +70,19 @@ create_pptx.py
 create_final_ppt.py
 create_prototype_pptx.py
 
+# Backend test, debug, deployment, and diagnostic scripts
+backend/test_*.py
+backend/check_*.py
+backend/deploy_*.py
+backend/deep_test*.py
+backend/diag_*.py
+backend/find_*.py
+backend/fix_*.py
+backend/multi_test*.py
+backend/add_action_groups.py
+backend/update_supervisor_prompt.py
+backend/*.txt
+
 # Root directory ad-hoc test scripts and logs
 /*.py
 /*.png

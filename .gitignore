@@ -70,6 +70,11 @@ create_pptx.py
 create_final_ppt.py
 create_prototype_pptx.py
 
+# Root directory ad-hoc test scripts and logs
+/*.py
+/*.png
+/*.txt
+
 # Test output files (may contain AWS secrets)
 test_output*.json
 test_payload*.json

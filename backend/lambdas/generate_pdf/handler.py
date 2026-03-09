@@ -99,11 +99,60 @@ def call_bedrock(prompt: str) -> str:
     raise RuntimeError("Bedrock failed")
 
 
+def _pdf_escape(text: str) -> str:
+    """Escape special PDF characters and strip non-latin-1."""
+    s = str(text) if text else ""
+    s = s.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+    s = s.encode("latin-1", errors="replace").decode("latin-1")
+    return s
+
+
 def generate_pdf_bytes(content: dict, grant: dict, ngo: dict) -> bytes:
     """Generate a professional PDF proposal. Falls back to text if fpdf2 fails."""
     def fallback(reason=""):
-        logger.warning(f"PDF generation fallback to text: {reason}")
-        return f"PROPOSAL: {grant.get('programName','Grant')}\nBy: {ngo.get('ngoName','NGO')}\n{json.dumps(content,indent=2)}".encode()
+        logger.warning(f"PDF generation fallback to minimal PDF: {reason}")
+        # Build a valid minimal PDF so browsers can always render it
+        title = grant.get('programName', 'Grant Proposal')
+        ngo_name = ngo.get('ngoName', 'NGO')
+        summary = content.get('executiveSummary', '')[:800] if content.get('executiveSummary') else json.dumps(content, indent=2)[:800]
+        text_lines = [
+            f"Grant Proposal: {title}",
+            f"NGO: {ngo_name}",
+            "",
+            "Executive Summary:",
+            summary,
+        ]
+        body_text = "\\n".join(text_lines)
+        # Minimal valid PDF 1.4
+        stream = f"BT /F1 14 Tf 50 750 Td ({_pdf_escape(title)}) Tj ET\n"
+        stream += f"BT /F1 10 Tf 50 730 Td (NGO: {_pdf_escape(ngo_name)}) Tj ET\n"
+        y = 700
+        for line in body_text.split("\\n"):
+            if y < 50:
+                break
+            stream += f"BT /F1 10 Tf 50 {y} Td ({_pdf_escape(line[:90])}) Tj ET\n"
+            y -= 16
+        stream_bytes = stream.encode("latin-1", errors="replace")
+        objects = []
+        objects.append(b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
+        objects.append(b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n")
+        objects.append(b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n")
+        objects.append(b"4 0 obj\n<< /Length " + str(len(stream_bytes)).encode() + b" >>\nstream\n" + stream_bytes + b"\nendstream\nendobj\n")
+        objects.append(b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n")
+        body = b""
+        offsets = []
+        header = b"%PDF-1.4\n"
+        pos = len(header)
+        for obj in objects:
+            offsets.append(pos)
+            body += obj
+            pos += len(obj)
+        xref_pos = pos
+        xref = b"xref\n0 6\n0000000000 65535 f \n"
+        for off in offsets:
+            xref += f"{off:010d} 00000 n \n".encode()
+        trailer = f"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n{xref_pos}\n%%EOF\n".encode()
+        return header + body + xref + trailer
 
     try:
         from fpdf import FPDF

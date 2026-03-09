@@ -57,10 +57,7 @@ export default function LandingPage() {
                 </button>
               </div>
 
-              <div style={{ marginTop: 32, display: "flex", gap: "12px", alignItems: "center", fontFamily: "var(--font-space-mono)", fontSize: 12, color: "var(--text-muted)" }}>
-                <span>SYSTEM STATUS:</span>
-                <span className="badge badge-valid">OPERATIONAL</span>
-              </div>
+
             </div>
 
             {/* Institutional Features */}
@@ -84,8 +81,8 @@ export default function LandingPage() {
       </div>
 
       <div style={{ padding: "24px 40px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-muted)", fontFamily: "var(--font-space-mono)" }}>
-        <div>V 1.0.0 / AI FOR BHARAT HACKATHON 2026</div>
-        <div>POWERED BY AWS</div>
+        <div>© 2026 NidhiAI</div>
+        <div>BUILT ON AWS</div>
       </div>
     </div>
   );

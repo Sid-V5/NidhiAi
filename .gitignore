@@ -48,6 +48,27 @@ backend/dump_policies.py
 backend/policy_dump.txt
 backend/wire_agent.py
 backend/wire_remaining.py
+backend/check_agents.py
+backend/fix_prompt.py
+backend/build_ppt*.py
+
+# PPT presentation files & hackathon submission docs (store locally, not in repo)
+*.pptx
+*.ppt
+*.pdf
+*.docx
+*.doc
+*.xlsx
+*.md.resolved
+
+# Office temp lock files (created when a file is open in PowerPoint/Word)
+~$*
+
+# PPT generation utility scripts (one-off, not part of the codebase)
+build_ppt*.py
+create_pptx.py
+create_final_ppt.py
+create_prototype_pptx.py
 
 # Test output files (may contain AWS secrets)
 test_output*.json

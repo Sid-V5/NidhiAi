@@ -173,8 +173,8 @@ NEXT_PUBLIC_SUPERVISOR_AGENT_ID=<your-agent-id>
 
 ---
 
-## Team
+## Team Velox
 
-**Solo Developer** - Siddhant
+**Solo Developer** 
 
 Built for **AI for Bharat Hackathon 2026** · Track 03: AI for Communities, Access & Public Impact

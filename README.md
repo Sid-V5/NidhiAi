@@ -4,9 +4,9 @@
 
 India mandates qualifying companies to spend **2% of average net profits** on CSR (Section 135, Companies Act 2013). In FY 2024-25 alone, **301 major companies spent ₹17,742 Crores** on CSR activities (CSRBOX ICOR 2025). The total annual CSR pool is estimated at **~₹38,000 Crores**.
 
-Yet **3.7 million+ registered NGOs** (DARPAN Portal) compete for this funding — and the vast majority lose out because they can't afford compliance teams, grant writers, or legal advisors.
+Yet **3.7 million+ registered NGOs** (DARPAN Portal) compete for this funding - and the vast majority lose out because they can't afford compliance teams, grant writers, or legal advisors.
 
-**NidhiAI automates the entire CSR funding lifecycle** — from document verification to grant discovery to proposal generation — using a multi-agent AI system built entirely on AWS.
+**NidhiAI automates the entire CSR funding lifecycle** - from document verification to grant discovery to proposal generation - using a multi-agent AI system built entirely on AWS.
 
 🔗 **Live Demo**: [nidhi-ai.vercel.app](https://nidhi-ai.vercel.app)
 
@@ -19,7 +19,7 @@ Yet **3.7 million+ registered NGOs** (DARPAN Portal) compete for this funding �
 | **1. Upload Documents** | NGO uploads 12A, 80G, CSR-1 certificates | S3 |
 | **2. Compliance Check** | AI extracts fields via OCR, validates dates and registration numbers | Amazon Textract + Bedrock Agent |
 | **3. Grant Discovery** | Semantic search matches NGO profile to corporate CSR programs | Bedrock Knowledge Bases + OpenSearch Serverless |
-| **4. Proposal Drafting** | AI writes a formal 5-page grant proposal, livestreamed to screen | Bedrock Agent (Claude 3.5 Sonnet) + RAG |
+| **4. Proposal Drafting** | AI writes a formal 5-page grant proposal, livestreamed to screen | Bedrock Agent + RAG |
 | **5. Impact Reports** | Generates quarterly donor reports with fund utilization and outcomes | Bedrock Agent (Amazon Nova Lite) |
 | **6. CSR Chatbot** | Answers questions about Section 135, Schedule VII, FCRA, 12A/80G | Bedrock Knowledge Base |
 
@@ -51,7 +51,7 @@ Yet **3.7 million+ registered NGOs** (DARPAN Portal) compete for this funding �
     Region: ap-south-1 (Mumbai)    │  Compute: Lambda (x4)  │  Vector DB: OpenSearch
 ```
 
-All orchestrated by the **Bedrock Supervisor Pattern** — the Supervisor agent routes user requests to the correct sub-agent, chains multi-step workflows, and synthesizes responses.
+All orchestrated by the **Bedrock Supervisor Pattern** - the Supervisor agent routes user requests to the correct sub-agent, chains multi-step workflows, and synthesizes responses.
 
 ---
 
@@ -60,13 +60,13 @@ All orchestrated by the **Bedrock Supervisor Pattern** — the Supervisor agent 
 | Service | Purpose |
 |---------|---------|
 | **Amazon Bedrock Agents** | Multi-agent orchestration using Supervisor Pattern (1 supervisor + 4 sub-agents) |
-| **Amazon Bedrock Knowledge Bases** | 3 RAG knowledge bases — CSR laws, corporate CSR opportunities, proposal templates |
+| **Amazon Bedrock Knowledge Bases** | 3 RAG knowledge bases - CSR laws, corporate CSR opportunities, proposal templates |
 | **Anthropic Claude 3.5 Sonnet** (via Bedrock) | Primary foundation model for compliance reasoning and proposal generation |
 | **Amazon Nova Lite** (via Bedrock) | Cost-effective model for grant matching and impact reports |
 | **Amazon Titan Text Embeddings V2** | Text-to-vector embeddings for semantic search across all 3 knowledge bases |
 | **Amazon Textract** | OCR + form extraction on scanned government certificates (12A, 80G, CSR-1) |
 | **Amazon OpenSearch Serverless** | Vector database backing all Bedrock Knowledge Bases |
-| **AWS Lambda** | 4 Python 3.12 functions — one per agent action group |
+| **AWS Lambda** | 4 Python 3.12 functions - one per agent action group |
 | **Amazon API Gateway** | REST API for frontend-to-backend communication |
 | **Amazon S3** | Document storage (uploads, generated PDFs, KB source data) |
 | **Amazon DynamoDB** | NGO profiles, compliance status, proposal metadata |
@@ -74,19 +74,19 @@ All orchestrated by the **Bedrock Supervisor Pattern** — the Supervisor agent 
 | **Amazon CloudWatch** | Agent trace logging and Lambda monitoring |
 | **AWS IAM** | Least-privilege execution roles for all services |
 
-**Region**: `ap-south-1` (Mumbai) — data residency compliance for Indian NGOs.
+**Region**: `ap-south-1` (Mumbai) - data residency compliance for Indian NGOs.
 
 ---
 
 ## Key Technical Highlights
 
-- **Real-time Streaming**: Proposal and report generation use server-side streaming — the AI output appears on screen as the model writes, so users see results immediately instead of waiting 15-20 seconds for a complete response.
+- **Real-time Streaming**: Proposal and report generation use server-side streaming - the AI output appears on screen as the model writes, so users see results immediately instead of waiting 15-20 seconds for a complete response.
 
-- **Agent Trace Panel**: A built-in UI panel shows the Supervisor's decision-making live — which sub-agent was invoked, what Knowledge Base was queried, and what data was returned. Full transparency into the multi-agent orchestration.
+- **Agent Trace Panel**: A built-in UI panel shows the Supervisor's decision-making live - which sub-agent was invoked, what Knowledge Base was queried, and what data was returned. Full transparency into the multi-agent orchestration.
 
 - **100% Serverless**: Zero infrastructure to manage. Scales from 0 to millions of NGOs automatically. Costs nothing when idle.
 
-- **3 Specialized Knowledge Bases**: Each KB targets a different domain — CSR legislation, corporate CSR filings, and winning proposal templates — backed by Titan Embeddings V2 and OpenSearch Serverless.
+- **3 Specialized Knowledge Bases**: Each KB targets a different domain - CSR legislation, corporate CSR filings, and winning proposal templates - backed by Titan Embeddings V2 and OpenSearch Serverless.
 
 ---
 
@@ -175,6 +175,6 @@ NEXT_PUBLIC_SUPERVISOR_AGENT_ID=<your-agent-id>
 
 ## Team
 
-**Solo Developer** — Siddhant
+**Solo Developer** - Siddhant
 
 Built for **AI for Bharat Hackathon 2026** · Track 03: AI for Communities, Access & Public Impact

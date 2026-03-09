@@ -74,7 +74,7 @@ export default function ProposalsPage() {
         setIsGenerating(true); setStreamedText(""); setDownloadUrl("");
 
         const selectedGrant = availableGrants.find(g => g.grantId === selectedGrantId);
-        setActiveGrantLabel(selectedGrant ? `${selectedGrant.programName} — ${selectedGrant.corporationName}` : "");
+        setActiveGrantLabel(selectedGrant ? `${selectedGrant.programName} - ${selectedGrant.corporationName}` : "");
 
         const res = await generateProposal({
             ngoId: session.ngoId, grantId: selectedGrantId,
@@ -97,7 +97,7 @@ export default function ProposalsPage() {
                 const budget = content.budgetTable as Array<Record<string, unknown>> | undefined;
                 if (budget?.length) {
                     parts.push(`\n# Budget Breakdown`);
-                    budget.forEach(b => parts.push(`• ${b.category}: ₹${(Number(b.amount) || 0).toLocaleString("en-IN")} — ${b.description}`));
+                    budget.forEach(b => parts.push(`• ${b.category}: ₹${(Number(b.amount) || 0).toLocaleString("en-IN")} - ${b.description}`));
                     const total = budget.reduce((s, b) => s + (Number(b.amount) || 0), 0);
                     parts.push(`\nTotal: ₹${total.toLocaleString("en-IN")}`);
                 }
@@ -190,7 +190,7 @@ export default function ProposalsPage() {
                             <select value={selectedGrantId} onChange={(e) => setSelectedGrantId(e.target.value)} className="input-field" style={{ fontSize: 13 }}>
                                 <option value="">Choose a grant...</option>
                                 {availableGrants.map(g => (
-                                    <option key={g.grantId} value={g.grantId}>{g.programName} — {g.corporationName}</option>
+                                    <option key={g.grantId} value={g.grantId}>{g.programName} - {g.corporationName}</option>
                                 ))}
                             </select>
                         </div>

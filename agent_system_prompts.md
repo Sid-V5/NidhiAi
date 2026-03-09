@@ -271,7 +271,7 @@ Score each grant from 0.0 to 1.0 using this weighted criteria:
 | Funding range fit   | 20%    | Within range = 1.0, Close = 0.6, Far = 0.2 |
 | Eligibility match   | 20%    | Fully eligible = 1.0, Partially = 0.5, Ineligible = 0.0 |
 
-Return grants sorted by relevanceScore descending. Return a maximum of 5 grants. If fewer than 3 strong matches exist, include weaker matches with an honest relevanceScore.
+Return grants sorted by relevanceScore descending. Return a maximum of 10 grants. If fewer than 3 strong matches exist, include weaker matches with an honest relevanceScore.
 
 ═══════════════════════════════════════════
 matchReason — BE SPECIFIC

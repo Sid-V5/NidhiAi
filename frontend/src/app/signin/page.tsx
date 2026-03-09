@@ -69,7 +69,7 @@ export default function SignInPage() {
                         {mode === "signin" ? "Welcome back" : mode === "signup" ? "Create account" : "Verify email"}
                     </h1>
                     <p style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>
-                        {mode === "confirm" ? `We sent a code to ${email}` : "NidhiAI — AI-Powered CSR Funding"}
+                        {mode === "confirm" ? `We sent a code to ${email}` : "NidhiAI - AI-Powered CSR Funding"}
                     </p>
                 </div>
 

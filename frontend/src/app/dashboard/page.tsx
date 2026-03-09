@@ -244,7 +244,7 @@ export default function DashboardPage() {
                 traces[traces.length - 1] = { ...traces[traces.length - 1], status: "done", observation: proposalSummary, durationMs: Date.now() - (traces[traces.length - 1].timestamp || Date.now()) };
                 setCurrentTraces([...traces]);
             } else {
-                proposalSummary = "Skipped — no matching grants found to draft a proposal for.";
+                proposalSummary = "Skipped - no matching grants found to draft a proposal for.";
             }
         }
 
@@ -340,7 +340,7 @@ export default function DashboardPage() {
             setCurrentTraces([{
                 type: "planning",
                 agentName: "Supervisor",
-                action: "Workflow detected — routing directly to requested internal agents",
+                action: "Workflow detected - routing directly to requested internal agents",
                 timestamp: now,
                 status: "active",
             }]);
@@ -500,7 +500,7 @@ export default function DashboardPage() {
                     value={prompt}
                     onChange={e => setPrompt(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                    placeholder={messages.length > 0 ? "Follow up with the Supervisor Agent..." : "Ask NidhiAI anything — verify docs, find grants, draft proposals..."}
+                    placeholder={messages.length > 0 ? "Follow up with the Supervisor Agent..." : "Ask NidhiAI anything - verify docs, find grants, draft proposals..."}
                     disabled={agentRunning}
                 />
                 <button className="command-bar__send" onClick={handleSubmit} disabled={agentRunning || !prompt.trim()}>
@@ -638,7 +638,7 @@ export default function DashboardPage() {
             {messages.length === 0 && !agentRunning && (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 24 }}>
                     {[
-                        { icon: "🚀", text: "Full Automation — verify, match & draft", prompt: "Verify all my compliance documents, find the best matching CSR grants for my NGO, and generate a proposal for the top match" },
+                        { icon: "🚀", text: "Full Automation - verify, match & draft", prompt: "Verify all my compliance documents, find the best matching CSR grants for my NGO, and generate a proposal for the top match" },
                         { icon: "⚖️", text: "Check my compliance status", prompt: "Check my compliance status and verify all uploaded documents" },
                         { icon: "🔍", text: "Find grants for my sector", prompt: `Find CSR grants matching my NGO's profile` },
                         { icon: "📝", text: "Draft a proposal", prompt: "Generate a grant proposal for the best matching CSR opportunity" },

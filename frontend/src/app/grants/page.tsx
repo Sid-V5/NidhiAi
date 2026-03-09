@@ -118,7 +118,7 @@ export default function GrantsPage() {
 
             {!loading && filtered.length > 0 && (
                 <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16 }}>
-                    Showing {filtered.length} grant{filtered.length !== 1 ? "s" : ""} — Click a grant to draft a proposal
+                    Showing {filtered.length} grant{filtered.length !== 1 ? "s" : ""} | Click a grant to draft a proposal
                 </div>
             )}
 

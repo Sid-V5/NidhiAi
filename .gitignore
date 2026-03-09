@@ -90,3 +90,4 @@ desktop.ini
 
 # Gemini/Agent artifacts
 .gemini/
+.playwright-mcp/

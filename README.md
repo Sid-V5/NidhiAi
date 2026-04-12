@@ -166,7 +166,7 @@ NEXT_PUBLIC_SUPERVISOR_AGENT_ID=<your-agent-id>
 | Frontend | Next.js 16, React 19, TailwindCSS |
 | Backend | AWS Lambda (Python 3.12) |
 | AI/ML | Amazon Bedrock Agents, Textract, Titan Embeddings V2 |
-| Models | Claude 3.5 Sonnet, Amazon Nova Lite |
+| Models | Claude 4.6 Sonnet, Amazon Nova Lite |
 | Database | DynamoDB, OpenSearch Serverless |
 | Auth | Amazon Cognito |
 | Hosting | Vercel (frontend), AWS (backend) |

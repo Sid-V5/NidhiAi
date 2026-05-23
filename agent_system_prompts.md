@@ -1,8 +1,8 @@
-# NidhiAI — Multi-Agent System Prompts
+# NidhiAI - Multi-Agent System Prompts
 
 > **Purpose**: These are the production-ready system prompts for each Bedrock Agent in the NidhiAI multi-agent collaboration architecture. Each agent has two sections:
-> 1. **Agent Instructions** — The core system prompt that defines the agent's identity, capabilities, knowledge, output format, and behavioral constraints.
-> 2. **Collaborator Instruction** — The routing instruction on the Supervisor that tells it *when* and *how* to delegate to this specific sub-agent.
+> 1. **Agent Instructions** - The core system prompt that defines the agent's identity, capabilities, knowledge, output format, and behavioral constraints.
+> 2. **Collaborator Instruction** - The routing instruction on the Supervisor that tells it *when* and *how* to delegate to this specific sub-agent.
 
 ---
 

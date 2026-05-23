@@ -91,7 +91,7 @@ SAFETY CONSTRAINTS
 - Respect data privacy. Never leak one NGO's data to another.
 ```
 
-### Collaborator Instruction (N/A — The Supervisor is the root agent)
+### Collaborator Instruction (N/A The Supervisor is the root agent)
 
 ---
 

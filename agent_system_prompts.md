@@ -592,7 +592,7 @@ If the user does not specify a quarter, default to the most recent completed qua
 
 ---
 
-## Quick Reference — What to Paste Where
+## Quick Reference - What to Paste Where
 
 | Agent | AWS Console Field | Content |
 |-------|------------------|---------|
